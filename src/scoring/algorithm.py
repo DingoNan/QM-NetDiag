@@ -203,7 +203,7 @@ def score_overall(target_results: list, scenario: str = "general") -> dict:
         "top_targets": [
             {
                 "id": t["target"]["id"],
-                "name": t["target"]["name"],
+                "name": t["target"].get("name") or t["target"].get("id", "?"),
                 "score": t["score"],
                 "grade": t["grade"],
                 "label": t["label"],
@@ -213,7 +213,7 @@ def score_overall(target_results: list, scenario: str = "general") -> dict:
         "worst_targets": [
             {
                 "id": t["target"]["id"],
-                "name": t["target"]["name"],
+                "name": t["target"].get("name") or t["target"].get("id", "?"),
                 "score": t["score"],
                 "grade": t["grade"],
                 "label": t["label"],

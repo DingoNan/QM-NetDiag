@@ -146,7 +146,155 @@
       <button class="btn-secondary" id="btn-stop-test" style="margin-top: 24px;">⏹ 停止</button>
     </div>
 
-    <!-- 结果页 -->
+    <!-- 历史趋势页 -->
+        <div class="history-page" id="view-history" style="display:none;">
+          <div class="page-header">
+            <button class="btn-icon" id="btn-back-from-history">←</button>
+            <h2>历史趋势 · 最近 30 天</h2>
+          </div>
+          <div class="history-summary">
+            <div class="history-stat">
+              <div class="history-stat-value" id="hist-total-count">0</div>
+              <div class="history-stat-label">总测试次数</div>
+            </div>
+            <div class="history-stat">
+              <div class="history-stat-value" id="hist-avg-score">—</div>
+              <div class="history-stat-label">平均评分</div>
+            </div>
+            <div class="history-stat">
+              <div class="history-stat-value" id="hist-trend">—</div>
+              <div class="history-stat-label">变化趋势</div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>综合评分趋势</h3>
+            <svg id="trend-svg" viewBox="0 0 800 220" preserveAspectRatio="none" style="width:100%; height:220px;"></svg>
+          </div>
+          <div class="chart-card">
+            <h3>最近 10 次测试</h3>
+            <div id="history-list" class="history-list"></div>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary" id="btn-clear-history">🗑 清空历史</button>
+            <button class="btn-secondary" id="btn-export-history">📥 导出全部数据</button>
+          </div>
+        </div>
+    
+        <!-- 设置页 -->
+        <div class="settings-page" id="view-settings" style="display:none;">
+          <div class="page-header">
+            <button class="btn-icon" id="btn-back-from-settings">←</button>
+            <h2>设置</h2>
+          </div>
+    
+          <div class="settings-group">
+            <h3>外观</h3>
+            <div class="settings-row">
+              <label>主题</label>
+              <select id="setting-theme">
+                <option value="dark">暗色 Cyber Neon</option>
+                <option value="light">亮色 Light Aurora</option>
+                <option value="system">跟随系统</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <label>字号</label>
+              <select id="setting-font-size">
+                <option value="standard">标准</option>
+                <option value="large">大</option>
+              </select>
+            </div>
+          </div>
+    
+          <div class="settings-group">
+            <h3>测试</h3>
+            <div class="settings-row">
+              <label>一键全测目标数</label>
+              <input type="number" id="setting-test-count" min="3" max="8" value="5">
+            </div>
+            <div class="settings-row">
+              <label>单项超时（秒）</label>
+              <input type="number" id="setting-timeout" min="2" max="30" value="5">
+            </div>
+            <div class="settings-row">
+              <label>Ping 次数</label>
+              <input type="number" id="setting-ping-count" min="1" max="50" value="5">
+            </div>
+          </div>
+    
+          <div class="settings-group">
+            <h3>网络信息</h3>
+            <div class="settings-row">
+              <label>公网 IP</label>
+              <span id="setting-public-ip" class="settings-value">获取中…</span>
+            </div>
+            <div class="settings-row">
+              <label>Wi-Fi</label>
+              <span id="setting-wifi" class="settings-value">获取中…</span>
+            </div>
+            <div class="settings-row">
+              <label>网卡</label>
+              <span id="setting-interfaces" class="settings-value">获取中…</span>
+            </div>
+          </div>
+    
+          <div class="settings-group">
+            <h3>成就 <span class="badge" id="achievement-count">0/5</span></h3>
+            <div id="achievements-list" class="achievements-list"></div>
+          </div>
+    
+          <div class="settings-group danger">
+            <h3>危险操作</h3>
+            <button class="btn-secondary" id="btn-clear-all-data">⚠ 清空全部用户数据</button>
+            <button class="btn-secondary" id="btn-reset-settings">🔄 重置设置为默认</button>
+          </div>
+    
+          <div class="settings-footer">
+            NetDiag v2.0 · 浅木·先生
+          </div>
+        </div>
+    
+        <!-- 自定义目标页 -->
+        <div class="custom-page" id="view-custom" style="display:none;">
+          <div class="page-header">
+            <button class="btn-icon" id="btn-back-from-custom">←</button>
+            <h2>自定义目标</h2>
+          </div>
+          <div class="custom-form">
+            <h3>添加新目标</h3>
+            <div class="form-row">
+              <label>名称</label>
+              <input type="text" id="custom-name" placeholder="我的服务器">
+            </div>
+            <div class="form-row">
+              <label>主机 / IP</label>
+              <input type="text" id="custom-host" placeholder="192.168.1.100">
+            </div>
+            <div class="form-row">
+              <label>端口</label>
+              <input type="number" id="custom-port" value="443" min="1" max="65535">
+            </div>
+            <div class="form-row">
+              <label>测试类型</label>
+              <select id="custom-test-type">
+                <option value="tcp">TCP 连通性</option>
+                <option value="http">HTTP</option>
+                <option value="ping">Ping</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>备注</label>
+              <input type="text" id="custom-note" placeholder="公司测试服务器">
+            </div>
+            <button class="btn-primary" id="btn-add-custom">➕ 添加目标</button>
+          </div>
+          <div class="custom-list">
+            <h3>已添加 <span class="badge" id="custom-count">0</span></h3>
+            <div id="custom-targets-list"></div>
+          </div>
+        </div>
+    
+        <!-- 结果页 -->
     <div class="result-page" id="view-result" style="display:none;">
       <div class="poster-card">
         <div class="poster-score">

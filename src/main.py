@@ -31,7 +31,9 @@ from core.tcp_test import TcpProbeTest
 from core.http_probe import HttpProbeTest
 from scoring import score_single, score_overall, comment_overall
 from history import store as history_store
-from achievements import record_test
+from achievements import record_test, list_unlocked
+import user_prefs
+import net_info
 
 
 class NetDiagAPI:
@@ -206,9 +208,9 @@ class NetDiagAPI:
 
         # 简化：用 TCP 测试代替所有类型（避免复杂的多测试类型实现）
         try:
-            tcp_test = TcpProbeTest(host=host, port=port)
+            tcp_test = TcpProbeTest(host=host, port=port, timeout=4)
             tcp_test.stop_event = self._stop_flag
-            r = tcp_test.run(timeout=4)
+            r = tcp_test.run()
             latency = None
             if r.extra:
                 latency = r.extra.get("latency_ms")
@@ -254,6 +256,115 @@ class NetDiagAPI:
             return {"success": True}
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    # ----------------------------------------------------------------
+    # 收藏夹
+    # ----------------------------------------------------------------
+    def get_favorites(self) -> list:
+        """获取收藏的目标 id 列表"""
+        return user_prefs.get_favorites()
+
+    def add_favorite(self, target_id: str) -> dict:
+        """添加收藏"""
+        return {"favorites": user_prefs.add_favorite(target_id)}
+
+    def remove_favorite(self, target_id: str) -> dict:
+        """移除收藏"""
+        return {"favorites": user_prefs.remove_favorite(target_id)}
+
+    def clear_favorites(self) -> dict:
+        """清空收藏"""
+        user_prefs.clear_favorites()
+        return {"success": True}
+
+    # ----------------------------------------------------------------
+    # 自定义目标
+    # ----------------------------------------------------------------
+    def get_custom_targets(self) -> list:
+        """获取用户自定义目标"""
+        return user_prefs.get_custom_targets()
+
+    def add_custom_target(self, target: dict) -> dict:
+        """添加自定义目标"""
+        customs = user_prefs.add_custom_target(target)
+        return {"custom_targets": customs, "added": target}
+
+    def remove_custom_target(self, target_id: str) -> dict:
+        """移除自定义目标"""
+        customs = user_prefs.remove_custom_target(target_id)
+        return {"custom_targets": customs}
+
+    # ----------------------------------------------------------------
+    # 设置
+    # ----------------------------------------------------------------
+    def get_settings(self) -> dict:
+        """获取用户设置"""
+        return user_prefs.get_settings()
+
+    def update_setting(self, key: str, value) -> dict:
+        """更新单个设置"""
+        return {"settings": user_prefs.update_setting(key, value)}
+
+    def reset_settings(self) -> dict:
+        """重置设置"""
+        return {"settings": user_prefs.reset_settings()}
+
+    # ----------------------------------------------------------------
+    # 历史趋势
+    # ----------------------------------------------------------------
+    def get_history(self, days: int = 30, target_id: str = None) -> list:
+        """获取历史记录"""
+        if target_id:
+            return history_store.list_by_target(target_id, days=days)
+        return history_store.list_recent(days=days)
+
+    def get_trend(self, target_id: str, days: int = 30) -> dict:
+        """获取单个目标的趋势数据"""
+        return history_store.trend(target_id, days=days)
+
+    def clear_history(self) -> dict:
+        """清空历史"""
+        n = history_store.clear()
+        return {"cleared": n}
+
+    # ----------------------------------------------------------------
+    # 成就
+    # ----------------------------------------------------------------
+    def get_achievements(self) -> list:
+        """获取成就列表（含解锁状态）"""
+        return list_unlocked()
+
+    # ----------------------------------------------------------------
+    # 网络信息
+    # ----------------------------------------------------------------
+    def get_public_ip(self) -> dict:
+        """获取公网 IP（推断）"""
+        return net_info.get_public_ip_info()
+
+    def get_wifi_signal(self) -> dict:
+        """获取 Wi-Fi 信号"""
+        return net_info.get_wifi_signal()
+
+    def get_interfaces(self) -> list:
+        """获取本机网卡列表"""
+        return net_info.get_network_interfaces()
+
+    # ----------------------------------------------------------------
+    # 清空全部用户数据
+    # ----------------------------------------------------------------
+    def clear_all_user_data(self) -> dict:
+        """清空所有用户数据（收藏/自定义/历史/成就/设置）"""
+        n_fav = user_prefs.clear_all()
+        n_hist = history_store.clear()
+        from achievements import clear as clear_ach
+        n_ach = clear_ach()
+        return {
+            "cleared": {
+                "prefs": n_fav,
+                "history": n_hist,
+                "achievements": n_ach,
+            }
+        }
 
 
 def main():
