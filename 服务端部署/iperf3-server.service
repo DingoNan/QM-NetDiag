@@ -1,0 +1,18 @@
+[Unit]
+Description=iperf3 network test server (NetDiag)
+Documentation=https://software.es.net/iperf/
+After=network.target
+
+[Service]
+Type=simple
+# 路径按实际编译安装位置调整（make install 默认 /usr/local/bin/iperf3）
+# 源码编译未安装时可用 /opt/iperf-3.14/src/iperf3
+ExecStart=/usr/local/bin/iperf3 -s -p 5201
+Restart=always
+RestartSec=5
+# 日志（可选，注释掉则走 journalctl）
+StandardOutput=append:/var/log/iperf3_server.log
+StandardError=append:/var/log/iperf3_server.log
+
+[Install]
+WantedBy=multi-user.target

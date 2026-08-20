@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+
+# PyInstaller 构建产物
+dist/
+build/
+*.spec.bak
+
+# 测试输出
+_smoke_out/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# 运行时生成的报告
+结果/
+reports/
+
+# 临时调试脚本（已被 smoke_test / comprehensive_test 覆盖）
+check_report.py
+check_results.py
+verify_abc.py
+e2e_test.py
+e2e_real_test.py
+
+# 一次性辅助脚本
+自动选择版本.bat
+自动选择版本.sh
+
+# IDE / 编辑器
+.idea/
+.vscode/
+.cursor/
+.opencode/
+.qoder/
+.skills/
+.test_data/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+logs/
+
+# 环境配置
+.env
+.env.local
+*.local

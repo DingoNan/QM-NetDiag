@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网络自检工具 · 界面原型 v1.0</title>
+<style>
+/* ============ 设计系统 ============ */
+:root{
+  --primary:#1B5E9E; --primary-dark:#14487A; --primary-light:#E8F1FA;
+  --accent:#2196F3; --accent-light:#E3F2FD;
+  --success:#2E9E5B; --success-light:#E8F7EE;
+  --warning:#E6A23C; --warning-light:#FDF3E3;
+  --danger:#D64545;  --danger-light:#FDECEC;
+  --bg:#F5F7FA; --card:#FFFFFF;
+  --text:#2B3A4A; --muted:#8A97A5; --line:#E6EBF0;
+  --shadow:0 2px 8px rgba(27,94,158,.08),0 10px 28px rgba(27,94,158,.07);
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:"Microsoft YaHei","PingFang SC","WenQuanYi Micro Hei",-apple-system,sans-serif;
+  background:var(--bg); color:var(--text); font-size:14px; line-height:1.6;
+}
+/* ============ 应用框架 ============ */
+.app{max-width:1000px;height:100%;margin:0 auto;display:flex;flex-direction:column;background:var(--bg)}
+/* 顶部横幅 */
+.topbar{
+  background:linear-gradient(135deg,#14487A 0%,#1B5E9E 55%,#2471B8 100%);
+  color:#fff;padding:14px 24px;display:flex;align-items:center;gap:14px;
+  box-shadow:0 2px 10px rgba(20,72,122,.35);position:relative;z-index:10;
+}
+.logo{
+  width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.16);
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  border:1px solid rgba(255,255,255,.25);
+}
+.logo svg{width:26px;height:26px}
+.topbar .title{flex:1;min-width:0}
+.topbar .title h1{font-size:18px;font-weight:600;letter-spacing:.5px;white-space:nowrap}
+.topbar .title .sub{font-size:12px;opacity:.75;margin-top:1px}
+.topbar .ver{
+  font-size:11px;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px;
+  white-space:nowrap;
+}
+.topbar .icon-btn{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;
+  width:38px;height:38px;border-radius:10px;font-size:17px;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;transition:.2s;
+}
+.topbar .icon-btn:hover{background:rgba(255,255,255,.26);transform:translateY(-1px)}
+/* 主内容区 */
+main{flex:1;overflow-y:auto;padding:22px 26px 90px;scroll-behavior:smooth}
+.page{display:none;animation:fadeIn .25s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* 底部导航 */
+.bottom-nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:1000px;background:#fff;border-top:1px solid var(--line);
+  display:flex;padding:8px 16px calc(8px + env(safe-area-inset-bottom));
+  z-index:20;box-shadow:0 -4px 16px rgba(27,94,158,.07);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 0;cursor:pointer;color:var(--muted);font-size:12px;border-radius:10px;
+  transition:.2s;user-select:none;border:none;background:none;
+}
+.nav-item .ico{font-size:20px;line-height:1}
+.nav-item:hover{color:var(--accent)}
+.nav-item.active{color:var(--primary);font-weight:600;background:var(--primary-light)}
+/* ============ 通用组件 ============ */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px}
+.card-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.card-title .tag{font-size:11px;font-weight:400;color:var(--muted);margin-left:auto}
+.btn{
+  border:none;cursor:pointer;font-family:inherit;border-radius:10px;
+  transition:.18s;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+}
+.btn:active{transform:scale(.97)}
+.btn-primary{
+  background:linear-gradient(135deg,#1B5E9E,#2471B8);color:#fff;font-weight:600;
+  box-shadow:0 6px 16px rgba(27,94,158,.32);padding:12px 26px;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(27,94,158,.4)}
+.btn-secondary{background:var(--accent-light);color:var(--primary);padding:10px 20px;font-weight:500}
+.btn-secondary:hover{background:#CFE7FB}
+.btn-ghost{background:#fff;color:var(--primary);border:1.5px solid var(--primary);padding:10px 20px;font-weight:500}
+.btn-ghost:hover{background:var(--primary-light)}
+.btn-danger{background:var(--danger);color:#fff;padding:10px 20px;font-weight:500}
+.btn-sm{padding:7px 14px;font-size:13px;border-radius:8px}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
+  padding:3px 11px;border-radius:20px;white-space:nowrap;
+}
+.badge.ok{background:var(--success-light);color:var(--success)}
+.badge.warn{background:var(--warning-light);color:#C77E1D}
+.badge.bad{background:var(--danger-light);color:var(--danger)}
+.badge.gray{background:#F0F3F6;color:var(--muted)}
+.badge.blue{background:var(--accent-light);color:var(--primary)}
+.divider{height:1px;background:var(--line);margin:16px 0}
+/* 巨型主按钮 */
+.hero-btn{
+  width:230px;height:64px;border-radius:34px;border:none;cursor:pointer;color:#fff;
+  font-size:19px;font-weight:700;letter-spacing:2px;font-family:inherit;
+  background:linear-gradient(135deg,#1B5E9E 0%,#2471B8 60%,#2E8BC8 100%);
+  box-shadow:0 10px 26px rgba(27,94,158,.42),inset 0 1px 0 rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:.2s;position:relative;overflow:hidden;
+}
+.hero-btn::after{
+  content:"";position:absolute;top:0;left:-80%;width:50%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);
+  transform:skewX(-20deg);transition:.5s;
+}
+.hero-btn:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 16px 34px rgba(27,94,158,.5)}
+.hero-btn:hover::after{left:130%}
+.hero-btn:active{transform:scale(.97)}
+/* 指标卡 */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.stat-card{
+  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px 18px;display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden;
+}
+.stat-card .label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.stat-card .value{font-size:26px;font-weight:700;color:var(--text)}
+.stat-card .value small{font-size:13px;font-weight:400;color:var(--muted);margin-left:3px}
+.stat-card .trend{font-size:11px;color:var(--muted)}
+.stat-card .bar{
+  position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--accent);
+  transform-origin:left;animation:grow .8s ease forwards;
+}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+/* 测试项列表 */
+.test-list{display:flex;flex-direction:column;gap:9px}
+.test-item{
+  display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;
+  background:#FAFBFD;border:1px solid var(--line);transition:.2s;cursor:default;
+}
+.test-item:hover{border-color:var(--accent);background:#fff;box-shadow:0 3px 10px rgba(27,94,158,.08)}
+.test-item .t-icon{
+  width:38px;height:38px;border-radius:10px;flex:0 0 auto;font-size:19px;
+  display:flex;align-items:center;justify-content:center;background:var(--primary-light);
+}
+.test-item .t-name{font-size:14px;font-weight:600}
+.test-item .t-desc{font-size:12px;color:var(--muted)}
+.test-item .t-status{margin-left:auto;flex:0 0 auto}
+/* 状态点 */
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}
+.dot.green{background:var(--success);box-shadow:0 0 0 3px rgba(46,158,91,.18);animation:pulse 2s infinite}
+.dot.orange{background:var(--warning);box-shadow:0 0 0 3px rgba(230,162,60,.18)}
+.dot.gray{background:#B8C2CC}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+/* 进度环 */
+.ring-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 0 20px}
+.ring{position:relative;width:170px;height:170px}
+.ring svg{transform:rotate(-90deg)}
+.ring .ring-bg{fill:none;stroke:#E8EEF4;stroke-width:13}
+.ring .ring-fg{
+  fill:none;stroke:url(#ringGrad);stroke-width:13;stroke-linecap:round;
+  stroke-dasharray:452;stroke-dashoffset:452;transition:stroke-dashoffset .4s ease;
+}
+.ring .ring-num{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.ring .ring-num b{font-size:38px;color:var(--primary)}
+.ring .ring-num span{font-size:12px;color:var(--muted)}
+/* 当前进行项 */
+.now-test{
+  display:flex;align-items:center;gap:14px;background:var(--accent-light);
+  border:1px solid #BFE0FA;border-radius:12px;padding:13px 18px;margin:14px 0;
+}
+.now-test .spin{
+  width:26px;height:26px;border-radius:50%;flex:0 0 auto;
+  border:3px solid #BFE0FA;border-top-color:var(--accent);animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.now-test .nt-title{font-size:14px;font-weight:600;color:var(--primary)}
+.now-test .nt-sub{font-size:12px;color:#5A86AE}
+/* 表格 */
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th{
+  background:#F4F7FA;color:var(--muted);font-weight:600;text-align:left;
+  padding:9px 12px;font-size:12px;border-bottom:1px solid var(--line);
+}
+.table td{padding:9px 12px;border-bottom:1px solid #F0F3F6}
+.table tr:last-child td{border-bottom:none}
+.table tr:hover td{background:#FAFBFD}
+/* 表单 */
+.form-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.form-row label{width:150px;flex:0 0 auto;font-size:13px;color:var(--text);font-weight:500}
+.form-row .hint{font-size:11px;color:var(--muted);margin-top:2px}
+.input,select.input{
+  flex:1;padding:9px 13px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;
+  font-family:inherit;color:var(--text);background:#fff;transition:.18s;min-width:0;
+}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(33,150,243,.15)}
+.input[readonly]{background:#F7F9FB;color:var(--muted)}
+.input-num{width:90px;flex:0 0 auto}
+/* 开关 */
+.switch{position:relative;width:46px;height:26px;flex:0 0 auto}
+.switch input{opacity:0;width:0;height:0}
+.switch .sl{
+  position:absolute;inset:0;background:#D5DDE5;border-radius:20px;cursor:pointer;transition:.22s;
+}
+.switch .sl::before{
+  content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:.22s;
+}
+.switch input:checked + .sl{background:var(--success)}
+.switch input:checked + .sl::before{transform:translateX(20px)}
+/* 时间线 */
+.timeline{position:relative;padding-left:26px}
+.timeline::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.tl-item{position:relative;padding:0 0 16px 12px}
+.tl-item::before{
+  content:"";position:absolute;left:-23px;top:6px;width:12px;height:12px;border-radius:50%;
+  background:#fff;border:3px solid var(--accent);
+}
+.tl-item.ev-bad::before{border-color:var(--danger);background:var(--danger-light)}
+.tl-item.ev-warn::before{border-color:var(--warning)}
+.tl-item .tl-time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tl-item .tl-title{font-size:14px;font-weight:600;margin:1px 0 2px}
+.tl-item .tl-desc{font-size:12px;color:var(--muted)}
+.tl-item .tl-badge{margin-left:8px}
+/* 结论横幅 */
+.banner{
+  border-radius:var(--radius);padding:18px 22px;display:flex;align-items:center;gap:16px;
+  margin-bottom:18px;border:1px solid;
+}
+.banner .b-ico{font-size:34px}
+.banner h2{font-size:18px;font-weight:700}
+.banner p{font-size:13px;margin-top:2px}
+.banner.ok{background:var(--success-light);border-color:#BFE6CE;color:#1E7A45}
+.banner.warn{background:var(--warning-light);border-color:#F5D9A8;color:#B06A12}
+.banner.bad{background:var(--danger-light);border-color:#F5C4C4;color:#B23A3A}
+/* 目标卡 */
+.target-card{
+  display:flex;align-items:center;gap:18px;background:var(--card);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px 22px;margin-bottom:20px;
+}
+.target-card .t-ico{
+  width:56px;height:56px;border-radius:14px;flex:0 0 auto;font-size:27px;
+  background:linear-gradient(135deg,#1B5E9E,#2E8BC8);display:flex;align-items:center;justify-content:center;
+  color:#fff;box-shadow:0 6px 14px rgba(27,94,158,.3);
+}
+.target-card .t-info{flex:1;min-width:0}
+.target-card .t-addr{font-size:17px;font-weight:700;letter-spacing:.3px;font-variant-numeric:tabular-nums}
+.target-card .t-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.target-card .t-status{font-size:13px;font-weight:600;color:var(--success);display:flex;align-items:center}
+/* 动作栏 */
+.action-bar{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+/* 提示条 */
+.tip{
+  background:#F0F6FF;border:1px dashed #9DC6EC;border-radius:10px;color:#3E6E9E;
+  font-size:12px;padding:10px 14px;margin-top:14px;
+}
+/* 芯片选择 */
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip{
+  padding:8px 18px;border-radius:20px;border:1.5px solid var(--line);background:#fff;
+  cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;transition:.18s;
+}
+.chip:hover{border-color:var(--accent)}
+.chip.on{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+/* 监测实时条 */
+.live-bars{display:flex;align-items:flex-end;gap:3px;height:56px;padding:6px 0}
+.live-bars i{
+  flex:1;background:linear-gradient(180deg,#2E8BC8,#1B5E9E);border-radius:3px 3px 0 0;
+  min-height:3px;opacity:.85;transition:height .5s ease;
+}
+.live-bars i.bad{background:linear-gradient(180deg,#E6A23C,#D64545)}
+.live-bars i.drop{background:var(--danger)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== 顶部横幅 ===== -->
+  <header class="topbar">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12h4l2-7 4 14 3-10 2 3h5"/>
+      </svg>
+    </div>
+    <div class="title">
+      <h1>网络自检工具</h1>
+      <div class="sub">国产化信创 · 一体化系统网络体检</div>
+    </div>
+    <span class="ver">原型 v1.0</span>
+    <button class="icon-btn" title="设置" onclick="go('settings')">⚙️</button>
+    <button class="icon-btn" title="帮助">❓</button>
+  </header>
+
+  <main>
+    <!-- ============ ① 主界面 ============ -->
+    <section class="page active" id="page-home">
+      <!-- 目标服务器 -->
+      <div class="target-card">
+        <div class="t-ico">🖥️</div>
+        <div class="t-info">
+          <div class="t-addr">59.211.236.211 : 30014</div>
+          <div class="t-meta">NAT 映射 → 内网 192.168.67.133:5201（iperf3 服务端）· 上次探测：08-13 14:02 正常</div>
+        </div>
+        <div class="t-status"><span class="dot green"></span>服务器在线</div>
+        <button class="btn btn-ghost btn-sm" onclick="go('settings')">修改目标</button>
+      </div>
+
+      <!-- 主操作 -->
+      <div style="text-align:center;padding:14px 0 8px">
+        <button class="hero-btn" onclick="startCheck()">▶&nbsp;开始体检</button>
+        <div style="color:var(--muted);font-size:12.5px;margin-top:12px">点击后自动完成 7 项测试 · 约需 3 分钟 · 全程无需操作</div>
+      </div>
+
+      <!-- 测试项目 -->
+      <div class="card" style="margin-top:22px">
+        <div class="card-title">📋 本次体检包含的测试项目 <span class="tag">共 7 项 · 高级模式可自定义</span></div>
+        <div class="test-list">
+          <div class="test-item"><div class="t-icon">📶</div><div><div class="t-name">Ping 连通性测试</div><div class="t-desc">向目标发送 50 个探测包，统计丢包率与延迟</div></div><div class="t-status"><span class="badge blue">默认</span></div></div>
+          <div class="test-item"><div class="t-icon">🔌</div><div><div class="t-name">TCP 端口探测</div><div class="t-desc">检测 30014 端口是否可建立连接</div></div><div class="t-status"><span class="badge blue">默认</span></div></div>
+          <div class="test-item"><div class="t-icon">⬆️</div><div><div class="t-name">带宽测试 · 单流上行</div><div class="t-desc">iperf3 单连接 30 秒，测上行吞吐</div></div><div class="t-status"><span class="badge blue">默认</span></div></div>
+          <div class="test-item"><div class="t-icon">⬆️⬆️</div><div><div class="t-name">带宽测试 · 8 并行流</div><div class="t-desc">模拟多人并发场景，测极限吞吐</div></div><div class="t-status"><span class="badge blue">默认</span></div></div>
+          <div class="test-item"><div class="t-icon">⬇️</div><div><div class="t-name">带宽测试 · 反向（下行）</div><div class="t-desc">服务器向本机传输，测下行带宽与重传率</div></div><div class="t-status"><span class="badge blue">默认</span></div></div>
+          <div class="test-item"><div class="t-icon">🗺️</div><div><div class="t-name">路由追踪 Tracert</div><div class="t-desc">逐跳定位网络路径上的故障节点</div></div><div class="t-status"><span class="badge blue">默认</span></div></div>
+          <div class="test-item"><div class="t-icon">⏱️</div><div><div class="t-name">长时监测</div><div class="t-desc">连续 10 分钟轮询，捕捉"时断时续"的不稳定事件</div></div><div class="t-status"><span class="badge gray">可选 · 监测页开启</span></div></div>
+        </div>
+        <div class="tip">💡 提示：若系统提示"服务器离线"，请先检查网线 / WiFi 是否正常，或换一个网络再试。</div>
+      </div>
+    </section>
+
+    <!-- ============ ② 体检进度 ============ -->
+    <section class="page" id="page-progress">
+      <div class="card">
+        <div class="card-title">🧪 正在体检 <span class="tag">请勿关闭窗口或断开网络</span></div>
+        <div class="ring-wrap">
+          <div class="ring">
+            <svg width="170" height="170" viewBox="0 0 170 170">
+              <defs>
+                <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#1B5E9E"/><stop offset="100%" stop-color="#2E8BC8"/>
+                </linearGradient>
+              </defs>
+              <circle class="ring-bg" cx="85" cy="85" r="72"/>
+              <circle class="ring-fg" id="ringFg" cx="85" cy="85" r="72"/>
+            </svg>
+            <div class="ring-num"><b id="ringNum">12%</b><span>已完成 1 / 7 项</span></div>
+          </div>
+          <div class="now-test">
+            <div class="spin"></div>
+            <div>
+              <div class="nt-title" id="nowTitle">正在测试：Ping 连通性测试</div>
+              <div class="nt-sub" id="nowSub">向 59.211.236.211 发送探测包中…（第 32 / 50 包）</div>
+            </div>
+          </div>
+        </div>
+        <div class="test-list" id="progressList"></div>
+      </div>
+    </section>
+
+    <!-- ============ ③ 报告 ============ -->
+    <section class="page" id="page-report">
+      <div class="banner ok" id="reportBanner">
+        <div class="b-ico">🟢</div>
+        <div>
+          <h2>链路基本正常</h2>
+          <p>各项指标均在健康范围内。如仍感觉系统缓慢，建议检查一体化系统服务器端资源（CPU / 内存 / 数据库）。</p>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="label">📶 平均延迟</div><div class="value">12<small>ms</small></div><div class="trend">丢包率 0% · 最大 18ms</div><div class="bar" style="width:30%"></div></div>
+        <div class="stat-card"><div class="label">⬇️ 下行带宽</div><div class="value">48.5<small>Mbps</small></div><div class="trend">重传率 0.2% · 优秀</div><div class="bar" style="width:88%;background:var(--success)"></div></div>
+        <div class="stat-card"><div class="label">⬆️ 上行带宽</div><div class="value">23.2<small>Mbps</small></div><div class="trend">8 流并行 96.4 Mbps</div><div class="bar" style="width:64%"></div></div>
+        <div class="stat-card"><div class="label">🔌 端口连通</div><div class="value">✅ 正常</div><div class="trend">30014 建连 8ms</div><div class="bar" style="width:100%;background:var(--success)"></div></div>
+        <div class="stat-card"><div class="label">🗺️ 路由质量</div><div class="value">12 跳</div><div class="trend">无超时 · 无异常节点</div><div class="bar" style="width:100%;background:var(--success)"></div></div>
+        <div class="stat-card"><div class="label">🏆 综合评级</div><div class="value" style="color:var(--success)">A</div><div class="trend">建议：可正常使用</div><div class="bar" style="width:92%;background:var(--success)"></div></div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <div class="card-title">📊 详细测试数据 <span class="tag">报告文件：网络测试报告_综合楼208_20260813_1530.html</span></div>
+        <table class="table">
+          <thead><tr><th>测试项</th><th>结果</th><th>关键指标</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>Ping 连通性</td><td>50/50 无丢失</td><td>min 8ms / avg 12ms / max 18ms / mdev 2.1ms</td><td><span class="badge ok">✅ 正常</span></td></tr>
+            <tr><td>TCP 端口 30014</td><td>连接成功</td><td>建连耗时 8ms</td><td><span class="badge ok">✅ 正常</span></td></tr>
+            <tr><td>iperf3 单流上行</td><td>23.2 Mbps</td><td>30s · 重传 12 个 (0.2%)</td><td><span class="badge ok">✅ 正常</span></td></tr>
+            <tr><td>iperf3 8 流并行</td><td>96.4 Mbps</td><td>30s · 总重传率 0.4%</td><td><span class="badge ok">✅ 正常</span></td></tr>
+            <tr><td>iperf3 反向（下行）</td><td>48.5 Mbps</td><td>30s · 重传 34 个 (0.3%)</td><td><span class="badge ok">✅ 正常</span></td></tr>
+            <tr><td>路由追踪</td><td>12 跳到达</td><td>全程无超时，第 9 跳延迟 22ms</td><td><span class="badge ok">✅ 正常</span></td></tr>
+          </tbody>
+        </table>
+        <div class="tip">🌐 说明：本次带宽测试走运营商 NAT 映射链路（30014），结果受运营商线路质量影响，属正常现象。</div>
+      </div>
+
+      <div class="action-bar">
+        <button class="btn btn-primary" onclick="copied(this)">📋 复制摘要（微信直发运维）</button>
+        <button class="btn btn-secondary">💾 保存 HTML 报告</button>
+        <button class="btn btn-ghost">🌐 浏览器打开</button>
+        <button class="btn btn-ghost" onclick="startCheck()">↻ 重新体检</button>
+      </div>
+    </section>
+
+    <!-- ============ ④ 高级模式 ============ -->
+    <section class="page" id="page-advanced">
+      <div class="card">
+        <div class="card-title">🔧 高级模式 · 自定义测试参数 <span class="tag">适合运维人员</span></div>
+        <div class="form-row"><label>目标服务器</label><input class="input" value="59.211.236.211"></div>
+        <div class="form-row"><label>目标端口</label><input class="input input-num" value="30014"></div>
+        <div class="form-row"><label>Ping 次数</label><input class="input input-num" value="50"><span class="hint" style="margin-left:8px">1 - 1000</span></div>
+        <div class="form-row"><label>iperf3 时长（秒）</label><input class="input input-num" value="30"></div>
+        <div class="form-row"><label>并行流数</label><input class="input input-num" value="8"></div>
+        <div class="form-row"><label>反向测试（下行）</label><div class="switch"><input type="checkbox" checked id="swR"><label class="sl" for="swR"></label></div></div>
+        <div class="form-row"><label>运行单项测试</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm">📶 仅 Ping</button>
+            <button class="btn btn-secondary btn-sm">🔌 仅端口</button>
+            <button class="btn btn-secondary btn-sm">⬆️ 仅带宽</button>
+            <button class="btn btn-secondary btn-sm">🗺️ 仅路由</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="form-row"><label>增强测试</label>
+          <div class="chips">
+            <button class="chip">DNS 解析</button>
+            <button class="chip">HTTP 探测（一体化系统）</button>
+            <button class="chip on">多目标对比（内网 vs 外网）</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:flex-end">
+          <button class="btn btn-ghost">恢复默认</button>
+          <button class="btn btn-primary" onclick="startCheck()">▶ 按此参数开始测试</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ⑤ 设置 ============ -->
+    <section class="page" id="page-settings">
+      <div class="card">
+        <div class="card-title">⚙️ 设置 <span class="tag">修改后点击"保存配置"，将写入 config.ini</span></div>
+        <div class="form-row"><label>外网映射地址</label><input class="input" value="59.211.236.211"><div class="hint" style="margin-left:8px">NAT 映射地址（后期变更在此修改）</div></div>
+        <div class="form-row"><label>外网映射端口</label><input class="input input-num" value="30014"></div>
+        <div class="form-row"><label>内网真实地址</label><input class="input" value="192.168.67.133"><div class="hint" style="margin-left:8px">仅作备注参考，不参与测试</div></div>
+        <div class="form-row"><label>内网真实端口</label><input class="input input-num" value="5201"></div>
+        <div class="form-row"><label>一体化系统地址</label><input class="input" placeholder="可选，用于 HTTP 探测与 DNS 解析"></div>
+        <div class="form-row"><label>参考带宽（Mbps）</label><input class="input input-num" value="50"><div class="hint" style="margin-left:8px">低于该值报告将提示"带宽偏低"</div></div>
+        <div class="form-row"><label>报告保存目录</label><input class="input" value="结果/"></div>
+        <div class="form-row"><label>监测间隔（秒）</label><input class="input input-num" value="30"></div>
+        <div style="display:flex;gap:12px;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="toast('已恢复默认配置')">恢复默认</button>
+          <button class="btn btn-primary" onclick="toast('✅ 配置已保存到 config.ini')">保存配置</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ⑥ 长期监测 ============ -->
+    <section class="page" id="page-monitor">
+      <div class="card">
+        <div class="card-title">⏱️ 长期监测 <span class="tag">专治"时断时续"——自动捕捉不稳定事件</span></div>
+        <div class="chips" style="margin-bottom:16px">
+          <button class="chip on">10 分钟</button>
+          <button class="chip">30 分钟</button>
+          <button class="chip">1 小时</button>
+          <button class="chip">持续监测</button>
+        </div>
+        <div class="form-row"><label>探测间隔</label>
+          <div class="chips"><button class="chip on">30 秒</button><button class="chip">1 分钟</button><button class="chip">5 分钟</button></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">
+          <button class="btn btn-primary" onclick="toast('监测已启动，可最小化窗口，完成后自动生成报告')">▶ 启动监测</button>
+          <span class="hint">监测期间可最小化窗口，完成后自动生成"不稳定事件时间线"报告</span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">📈 实时连通性 <span class="tag">最近 60 次探测 · 绿色=正常 红色=断连/丢包</span></div>
+        <div class="live-bars" id="liveBars"></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)">
+          <span>← 60 次前</span><span>当前</span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">🚨 不稳定事件时间线 <span class="tag">本次监测共捕获 3 个事件</span></div>
+        <div class="timeline">
+          <div class="tl-item ev-bad">
+            <div class="tl-time">10:23:41</div>
+            <div class="tl-title">❌ 断连事件<span class="tl-badge badge bad">严重</span></div>
+            <div class="tl-desc">Ping 连续 4 次超时 + TCP 30014 连接失败，持续约 1 分 20 秒</div>
+          </div>
+          <div class="tl-item ev-warn">
+            <div class="tl-time">10:31:07</div>
+            <div class="tl-title">⚠️ 丢包事件<span class="tl-badge badge warn">中等</span></div>
+            <div class="tl-desc">30 秒内丢包 6/30，延迟从 12ms 飙升至 380ms</div>
+          </div>
+          <div class="tl-item ev-warn">
+            <div class="tl-time">10:44:52</div>
+            <div class="tl-title">⚠️ 延迟突增<span class="tl-badge badge warn">中等</span></div>
+            <div class="tl-desc">平均延迟 486ms（基线 12ms），持续约 40 秒后恢复</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-time">10:50:00</div>
+            <div class="tl-title">✅ 监测结束</div>
+            <div class="tl-desc">共 10 分钟 · 3 次事件 · 稳定性评级 C（不稳定）</div>
+          </div>
+        </div>
+        <div class="action-bar">
+          <button class="btn btn-primary">📋 复制时间线摘要</button>
+          <button class="btn btn-secondary">💾 保存监测报告</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== 底部导航 ===== -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-home" onclick="go('home')"><span class="ico">🏠</span>快速体检</button>
+    <button class="nav-item" id="nav-advanced" onclick="go('advanced')"><span class="ico">🔧</span>高级模式</button>
+    <button class="nav-item" id="nav-monitor" onclick="go('monitor')"><span class="ico">⏱️</span>长期监测</button>
+    <button class="nav-item" onclick="go('report')"><span class="ico">🗂️</span>历史报告</button>
+  </nav>
+
+</div>
+
+<script>
+/* ===== 页面切换 ===== */
+const pages=['home','progress','report','advanced','settings','monitor'];
+function go(name){
+  pages.forEach(p=>{
+    document.getElementById('page-'+p).classList.toggle('active',p===name);
+    const nav=document.getElementById('nav-'+p);
+    if(nav)nav.classList.toggle('active',p===name||(name==='report'&&p==='home'));
+  });
+  if(name==='settings'||name==='advanced'||name==='monitor'){
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  }
+  document.getElementById('page-'+name).scrollTop=0;
+}
+
+/* ===== 体检流程演示 ===== */
+const tests=[
+  ['📶','Ping 连通性测试','向 59.211.236.211 发送探测包中…'],
+  ['🔌','TCP 端口探测','检测 30014 端口连接中…'],
+  ['⬆️','带宽测试 · 单流上行','iperf3 单连接 30 秒测试中…'],
+  ['⬆️⬆️','带宽测试 · 8 并行流','iperf3 8 流并发测试中…'],
+  ['⬇️','带宽测试 · 反向（下行）','iperf3 反向传输测试中…'],
+  ['🗺️','路由追踪 Tracert','逐跳探测网络路径中…'],
+  ['⏱️','长时监测（可选）','本次未开启，已跳过']
+];
+let tIdx=0,tTimer=null;
+function startCheck(){
+  go('progress');
+  tIdx=0;
+  renderProgressList();
+  tTimer=setInterval(tick,1200);
+  tick();
+}
+function renderProgressList(){
+  const el=document.getElementById('progressList');
+  el.innerHTML=tests.map((t,i)=>{
+    const s=i<tIdx?'done':(i===tIdx?'now':'wait');
+    const badge=s==='done'?'<span class="badge ok">✅ 完成</span>':s==='now'?'<span class="badge blue">⏳ 进行中</span>':'<span class="badge gray">○ 等待</span>';
+    return '<div class="test-item"><div class="t-icon">'+t[0]+'</div><div><div class="t-name">'+t[1]+'</div><div class="t-desc">'+t[2]+'</div></div><div class="t-status">'+badge+'</div></div>';
+  }).join('');
+}
+function tick(){
+  if(tIdx>=tests.length){clearInterval(tTimer);go('report');return;}
+  document.getElementById('nowTitle').textContent='正在测试：'+tests[tIdx][1];
+  document.getElementById('nowSub').textContent=tests[tIdx][2];
+  document.getElementById('ringNum').textContent=Math.round((tIdx+0.4)/tests.length*100)+'%';
+  document.getElementById('ringFg').style.strokeDashoffset=452-452*((tIdx+0.4)/tests.length);
+  tIdx++;renderProgressList();
+}
+
+/* ===== 其他交互 ===== */
+function copied(btn){
+  btn.innerHTML='✅ 已复制到剪贴板';
+  setTimeout(()=>btn.innerHTML='📋 复制摘要（微信直发运维）',1500);
+}
+function toast(msg){
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;left:50%;top:60px;transform:translateX(-50%);background:#2B3A4A;color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;z-index:99;box-shadow:0 6px 18px rgba(0,0,0,.25);animation:fadeIn .25s';
+  d.textContent=msg;
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),2200);
+}
+/* 实时条演示 */
+(function(){
+  const el=document.getElementById('liveBars');
+  if(!el)return;
+  let html='';
+  for(let i=0;i<60;i++){
+    const r=Math.random();
+    const cls=r>0.93?'bad':(r>0.8?'':'');
+    html+='<i class="'+cls+'" style="height:'+(12+Math.random()*44)+'px"></i>';
+  }
+  el.innerHTML=html;
+})();
+</script>
+</body>
+</html>
