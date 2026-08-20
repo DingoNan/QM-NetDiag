@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetDiag 网络自检工具 · 一键搞定网络体检</title>
+<meta name="description" content="面向一线用户的傻瓜式网络体检工具：双击打开 → 点一下开始体检 → 自动跑完测试 → 一键导出报告发给运维。纯本地运行，零数据上传，支持 Windows / 麒麟 / macOS 六大平台。">
+<style>
+/* ============ 设计系统 ============ */
+:root{
+  --primary:#1B5E9E; --primary-dark:#14487A; --primary-deep:#0E2A47;
+  --accent:#2196F3; --accent-light:#E3F2FD;
+  --success:#2E9E5B; --success-light:#E8F7EE;
+  --warning:#E6A23C; --warning-light:#FDF3E3;
+  --danger:#D64545; --danger-light:#FDECEC;
+  --bg:#F5F7FA; --card:#FFFFFF;
+  --text:#2B3A4A; --muted:#7A8A9A; --line:#E6EBF0;
+  --hero-grad:linear-gradient(150deg,#0B2238 0%,#12395F 45%,#1B5E9E 100%);
+  --shadow:0 2px 8px rgba(27,94,158,.08),0 14px 34px rgba(27,94,158,.10);
+  --shadow-lg:0 8px 30px rgba(11,34,56,.18);
+  --radius:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC","WenQuanYi Micro Hei",-apple-system,sans-serif;
+  background:var(--bg); color:var(--text); font-size:15px; line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(33,150,243,.22)}
+a{color:var(--primary);text-decoration:none}
+img,svg{display:block}
+.wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+.section{padding:88px 0}
+.section-head{max-width:680px;margin:0 auto 54px;text-align:center}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:600;letter-spacing:1.5px;color:var(--primary);
+  background:var(--accent-light);border:1px solid #CFE4FA;
+  padding:5px 14px;border-radius:999px;margin-bottom:18px;
+}
+.section-head h2{font-size:34px;font-weight:800;letter-spacing:-.5px;color:var(--primary-deep);line-height:1.25}
+.section-head p{font-size:15.5px;color:var(--muted);margin-top:14px}
+/* ============ 通用组件 ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  font-size:15px;font-weight:600;padding:13px 26px;border-radius:12px;
+  cursor:pointer;transition:.22s ease;border:none;font-family:inherit;white-space:nowrap;
+}
+.btn:active{transform:scale(.97)}
+.btn-primary{
+  background:linear-gradient(135deg,#1B5E9E,#2E8BC8);color:#fff;
+  box-shadow:0 8px 20px rgba(27,94,158,.35);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(27,94,158,.45)}
+.btn-ghost{background:rgba(255,255,255,.1);color:#EAF3FB;border:1px solid rgba(255,255,255,.28)}
+.btn-ghost:hover{background:rgba(255,255,255,.18)}
+.btn-dark{background:#fff;color:var(--primary);border:1.6px solid #C9DDF0}
+.btn-dark:hover{border-color:var(--primary);background:var(--accent-light)}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;
+  padding:4px 12px;border-radius:999px;white-space:nowrap;
+}
+.badge-ok{background:var(--success-light);color:var(--success)}
+.badge-warn{background:var(--warning-light);color:#B9771C}
+.badge-bad{background:var(--danger-light);color:var(--danger)}
+/* ============ 顶部导航 ============ */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(11,34,56,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;align-items:center;gap:11px;color:#fff;font-weight:800;font-size:17px;letter-spacing:.3px}
+.brand svg{width:30px;height:30px}
+.brand small{display:block;font-size:11px;font-weight:400;color:#9FC3E6;line-height:1}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-links a{color:#C9DDF0;font-size:14px;transition:.2s}
+.nav-links a:hover{color:#fff}
+.nav-links .btn{font-size:13px;padding:9px 18px;margin-left:8px}
+.nav-burger{display:none;background:none;border:none;color:#fff;cursor:pointer;padding:8px}
+.nav-burger svg{width:26px;height:26px}
+/* ============ Hero ============ */
+.hero{
+  background:var(--hero-grad);color:#fff;position:relative;overflow:hidden;
+  padding:150px 0 96px;
+}
+.hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(720px 420px at 82% 12%,rgba(46,139,200,.28),transparent 60%),
+    radial-gradient(560px 400px at 8% 88%,rgba(33,150,243,.18),transparent 60%);
+}
+.hero::after{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:radial-gradient(rgba(255,255,255,.12) 1px,transparent 1px);
+  background-size:26px 26px;
+  mask-image:linear-gradient(180deg,transparent 20%,#000 70%,transparent);
+  -webkit-mask-image:linear-gradient(180deg,transparent 20%,#000 70%,transparent);
+}
+.hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:center}
+.hero h1{font-size:46px;line-height:1.2;font-weight:800;letter-spacing:-1px;margin:18px 0 22px}
+.hero h1 em{font-style:normal;background:linear-gradient(100deg,#6EC1F5,#A8E0FF);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero .lead{font-size:17px;color:#C9DDF0;max-width:540px;margin-bottom:34px}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:40px}
+.hero-points{display:flex;gap:30px;flex-wrap:wrap}
+.hero-point{display:flex;align-items:center;gap:9px;font-size:13.5px;color:#A9C8E4}
+.hero-point svg{width:18px;height:18px;color:#5FBF8E;flex:0 0 auto}
+/* —— App 界面模拟 —— */
+.app-mock{position:relative;z-index:1;perspective:1400px}
+.app-frame{
+  background:#fff;border-radius:20px;overflow:hidden;color:var(--text);
+  box-shadow:0 34px 80px rgba(0,0,0,.42),0 0 0 1px rgba(255,255,255,.14);
+  transform:rotateY(-7deg) rotateX(3deg);transition:transform .6s cubic-bezier(.16,1,.3,1);
+}
+.app-mock:hover .app-frame{transform:rotateY(-3deg) rotateX(1.5deg)}
+.app-topbar{
+  background:linear-gradient(135deg,#14487A,#1B5E9E 55%,#2471B8);
+  padding:11px 16px;display:flex;align-items:center;gap:10px;
+}
+.app-topbar .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.35)}
+.app-topbar .ttl{font-size:13px;font-weight:700;color:#fff}
+.app-topbar .sub{font-size:10.5px;color:#C9DDF0;margin-left:auto;display:flex;align-items:center;gap:5px}
+.app-body{background:var(--bg);padding:16px 18px 18px}
+.app-card{background:#fff;border-radius:13px;box-shadow:0 1px 5px rgba(27,94,158,.08);padding:14px 16px;margin-bottom:12px}
+.app-target{display:flex;align-items:center;gap:12px}
+.app-target .ico{
+  width:40px;height:40px;border-radius:11px;background:var(--accent-light);
+  display:flex;align-items:center;justify-content:center;color:var(--primary);flex:0 0 auto;
+}
+.app-target .ico svg{width:22px;height:22px}
+.app-target .host{font-size:14.5px;font-weight:700}
+.app-target .status{font-size:12px;color:var(--success);display:flex;align-items:center;gap:6px;margin-top:1px}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--success);position:relative}
+.pulse::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--success);opacity:.7;animation:pulse 1.8s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
+.app-start-btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:16px;border-radius:13px;border:none;cursor:pointer;
+  font-size:17px;font-weight:800;letter-spacing:2px;color:#fff;font-family:inherit;
+  background:linear-gradient(135deg,#1B5E9E,#2E8BC8);
+  box-shadow:0 8px 20px rgba(27,94,158,.35);margin-bottom:13px;transition:.2s;
+}
+.app-start-btn:hover{transform:translateY(-2px)}
+.app-start-btn svg{width:20px;height:20px}
+.app-start-btn.checked{background:linear-gradient(135deg,#2E9E5B,#3CB371);box-shadow:0 8px 20px rgba(46,158,91,.35)}
+.app-hint{font-size:11.5px;color:var(--muted);text-align:center;margin-bottom:14px}
+.app-tests{display:flex;flex-direction:column;gap:7px}
+.app-test{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:8px 11px;border-radius:9px;background:#FAFBFD;border:1px solid var(--line);transition:.3s}
+.app-test .check{width:18px;height:18px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+.app-test .check svg{width:11px;height:11px}
+.app-test.done .check{background:var(--success);color:#fff}
+.app-test.run .check{background:var(--accent);color:#fff;animation:bounce .9s ease infinite}
+.app-test.wait .check{background:#E4E9EF;color:#9AA7B4}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.app-test .bar{width:56px;height:4px;border-radius:4px;background:#EDF1F5;overflow:hidden;margin-left:auto;flex:0 0 auto}
+.app-test .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2196F3,#5FBF8E);border-radius:4px;transition:width .5s ease}
+.app-test .tval{font-size:11px;color:var(--muted);margin-left:auto;flex:0 0 auto}
+.app-test .bar + .tval{margin-left:10px}
+.app-test:not(:has(.bar)) .tval{margin-left:auto}
+.app-nav{
+  display:flex;background:#fff;border-top:1px solid var(--line);padding:8px 10px;gap:4px;
+}
+.app-nav span{
+  flex:1;text-align:center;font-size:11.5px;font-weight:600;color:var(--muted);
+  padding:7px 2px;border-radius:8px;cursor:default;
+}
+.app-nav span.on{color:var(--primary);background:var(--primary-light,#E8F1FA)}
+.float-chip{
+  position:absolute;right:-26px;bottom:26px;z-index:2;
+  background:rgba(255,255,255,.96);color:var(--primary-deep);border-radius:14px;
+  box-shadow:var(--shadow-lg);padding:12px 18px;display:flex;align-items:center;gap:12px;
+  animation:floaty 5s ease-in-out infinite;transform-origin:center;
+}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-9px)}}
+.float-chip .ico{width:34px;height:34px;border-radius:10px;background:var(--success-light);color:var(--success);display:flex;align-items:center;justify-content:center}
+.float-chip .ico svg{width:19px;height:19px}
+.float-chip b{font-size:15px;display:block;line-height:1.2}
+.float-chip small{font-size:11.5px;color:var(--muted)}
+/* ============ 数据条 ============ */
+.stats-band{background:#fff;border-bottom:1px solid var(--line);padding:40px 0}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+.stat-num{font-size:38px;font-weight:800;color:var(--primary);letter-spacing:-1px}
+.stat-num small{font-size:20px;font-weight:700}
+.stat-label{font-size:13.5px;color:var(--muted);margin-top:4px}
+/* ============ 痛点 ============ */
+.pain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.pain-card{
+  background:#fff;border-radius:var(--radius);padding:30px 28px;box-shadow:var(--shadow);
+  border-top:4px solid var(--warning);transition:.3s;
+}
+.pain-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg)}
+.pain-card .p-ico{
+  width:46px;height:46px;border-radius:13px;background:var(--warning-light);color:#B9771C;
+  display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+}
+.pain-card .p-ico svg{width:24px;height:24px}
+.pain-card h3{font-size:17.5px;font-weight:700;margin-bottom:10px;color:var(--primary-deep)}
+.pain-card p{font-size:14px;color:var(--muted)}
+/* ============ 功能 Bento ============ */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:20px}
+.bento-card{
+  background:#fff;border-radius:18px;padding:28px;box-shadow:var(--shadow);
+  grid-column:span 2;position:relative;overflow:hidden;transition:.3s;
+  display:flex;flex-direction:column;
+}
+.bento-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.bento-card.wide{grid-column:span 3}
+.bento-card.full{grid-column:span 6}
+.b-card-ico{
+  width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;
+}
+.b-card-ico svg{width:23px;height:23px}
+.bento-card h3{font-size:17px;font-weight:700;color:var(--primary-deep);margin-bottom:8px}
+.bento-card p{font-size:13.5px;color:var(--muted)}
+.bento-card .tagline{font-size:12px;color:var(--primary);font-weight:600;margin-top:14px;display:flex;align-items:center;gap:5px}
+.tagline svg{width:14px;height:14px}
+.tests-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.test-pill{
+  display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;
+  background:#FAFBFD;border:1px solid var(--line);border-radius:9px;padding:8px 10px;
+}
+.test-pill .c{width:16px;height:16px;border-radius:50%;background:var(--success);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.test-pill .c svg{width:9px;height:9px}
+.test-pill.warn .c{background:var(--warning)}
+.test-pill.bad .c{background:var(--danger)}
+.mini-chart{display:flex;align-items:flex-end;gap:6px;height:86px;margin-top:16px}
+.mini-chart i{flex:1;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#5FBF8E,#2E9E5B);min-height:6px;animation:growUp 1s ease forwards;transform-origin:bottom}
+.mini-chart i.blue{background:linear-gradient(180deg,#64B5F6,#2196F3)}
+.mini-chart i.red{background:linear-gradient(180deg,#EF7A7A,#D64545)}
+@keyframes growUp{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.mini-legend{display:flex;gap:16px;margin-top:10px;font-size:11.5px;color:var(--muted)}
+.mini-legend span{display:flex;align-items:center;gap:6px}
+.mini-legend i{width:10px;height:10px;border-radius:3px}
+/* ============ 流程 ============ */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;counter-reset:step}
+.step{
+  background:#fff;border-radius:var(--radius);padding:30px 28px;box-shadow:var(--shadow);
+  position:relative;
+}
+.step::before{
+  counter-increment:step;content:"0" counter(step);
+  position:absolute;top:-16px;left:26px;font-size:13px;font-weight:800;letter-spacing:1px;
+  color:#fff;background:var(--primary);padding:5px 14px;border-radius:999px;
+  box-shadow:0 6px 14px rgba(27,94,158,.32);
+}
+.step h3{font-size:17px;font-weight:700;color:var(--primary-deep);margin-bottom:9px;padding-top:6px}
+.step p{font-size:13.5px;color:var(--muted)}
+.step .kbd{
+  display:inline-block;margin-top:14px;font-size:12px;color:var(--primary);
+  background:var(--accent-light);border:1px solid #CFE4FA;padding:4px 12px;border-radius:8px;
+  font-family:Consolas,"Courier New",monospace;
+}
+/* ============ 报告示例 ============ */
+.report-show{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center}
+.report-doc{
+  background:#fff;border-radius:18px;box-shadow:var(--shadow-lg);overflow:hidden;
+  font-size:13px;
+}
+.report-head{background:linear-gradient(135deg,#14487A,#1B5E9E 55%,#2471B8);color:#fff;padding:20px 26px}
+.report-head h4{font-size:17px;font-weight:800;letter-spacing:.5px}
+.report-head p{font-size:11.5px;opacity:.78;margin-top:3px}
+.report-banner{margin:18px 22px 0;border-radius:11px;padding:13px 18px;border:1px solid #BFE6CE;background:#E8F7EE;color:#1E7A45;display:flex;align-items:center;gap:10px}
+.report-banner svg{width:19px;height:19px;flex:0 0 auto}
+.report-banner b{font-size:14.5px}
+.report-banner span{font-size:12px;opacity:.85}
+.report-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 22px}
+.r-stat{background:#FAFBFD;border:1px solid var(--line);border-radius:11px;padding:11px 14px;border-top:3px solid var(--primary)}
+.r-stat.ok{border-top-color:var(--success)}
+.r-stat.warn{border-top-color:var(--warning)}
+.r-stat .k{font-size:11px;color:var(--muted)}
+.r-stat .v{font-size:20px;font-weight:800;color:var(--primary-deep)}
+.r-stat .v small{font-size:11px;color:var(--muted);font-weight:400}
+.report-table{margin:0 22px 20px;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.report-table .row{display:flex;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line);font-size:12.5px}
+.report-table .row:last-child{border-bottom:none}
+.report-table .row b{font-weight:600}
+.report-table .row .st{margin-left:auto}
+.report-foot{margin:0 22px 22px;padding-top:14px;border-top:1px dashed var(--line);font-size:11px;color:var(--muted)}
+.wechat-card{
+  background:#fff;border-radius:18px;box-shadow:var(--shadow);padding:26px;position:relative;
+}
+.wechat-card h4{font-size:16px;font-weight:700;color:var(--primary-deep);display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.wechat-card h4 svg{width:20px;height:20px;color:var(--success)}
+.wechat-card>p{font-size:13px;color:var(--muted);margin-bottom:16px}
+.msg{
+  background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:15px 16px;
+  font-family:Consolas,"Courier New",monospace;font-size:12px;color:var(--primary-deep);
+  line-height:1.75;word-break:break-all;
+}
+.msg .hl{color:var(--success);font-weight:700}
+.msg .hlw{color:var(--warning);font-weight:700}
+.msg .hlr{color:var(--danger);font-weight:700}
+.copy-btn{
+  margin-top:14px;width:100%;justify-content:center;font-size:13.5px;padding:11px;
+}
+/* ============ 平台 ============ */
+.plat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.plat-card{
+  background:#fff;border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);
+  display:flex;align-items:center;gap:16px;transition:.3s;
+}
+.plat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.plat-ico{
+  width:46px;height:46px;border-radius:13px;background:var(--accent-light);color:var(--primary);
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+.plat-ico svg{width:24px;height:24px}
+.plat-card h4{font-size:15.5px;font-weight:700;color:var(--primary-deep)}
+.plat-card p{font-size:12px;color:var(--muted);margin-top:2px}
+/* ============ 隐私 ============ */
+.privacy{
+  background:var(--hero-grad);color:#fff;border-radius:26px;overflow:hidden;position:relative;
+  padding:56px 60px;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;
+}
+.privacy::before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.4;
+  background-image:radial-gradient(rgba(255,255,255,.14) 1px,transparent 1px);background-size:24px 24px;
+}
+.privacy h3{font-size:28px;font-weight:800;letter-spacing:-.5px;position:relative}
+.privacy p{font-size:14.5px;color:#B8D2E8;margin-top:14px;max-width:520px;position:relative}
+.privacy-feats{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pf{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:13px;
+  padding:16px 18px;display:flex;align-items:center;gap:12px;backdrop-filter:blur(6px);
+}
+.pf .ico{width:38px;height:38px;border-radius:10px;background:rgba(95,191,142,.2);color:#7CD8A6;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.pf .ico svg{width:20px;height:20px}
+.pf b{font-size:14px;display:block}
+.pf small{font-size:11.5px;color:#9FC3E6}
+/* ============ FAQ ============ */
+.faq{max-width:780px;margin:0 auto}
+.faq-item{background:#fff;border-radius:14px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.faq-q{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:19px 24px;cursor:pointer;font-size:15px;font-weight:600;color:var(--primary-deep);
+  user-select:none;transition:.2s;
+}
+.faq-q:hover{color:var(--primary)}
+.faq-q svg{width:18px;height:18px;flex:0 0 auto;transition:transform .3s;color:var(--muted)}
+.faq-item.open .faq-q svg{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .38s ease}
+.faq-a p{padding:0 24px 20px;font-size:13.5px;color:var(--muted)}
+/* ============ CTA ============ */
+.cta-band{background:var(--hero-grad);position:relative;overflow:hidden}
+.cta-band::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 300px at 50% 0%,rgba(46,139,200,.3),transparent 65%)}
+.cta-inner{position:relative;text-align:center;padding:86px 0}
+.cta-inner h2{font-size:34px;font-weight:800;color:#fff;letter-spacing:-.5px}
+.cta-inner p{color:#B8D2E8;font-size:15px;margin:16px 0 32px}
+.cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+/* ============ 页脚 ============ */
+.footer{background:#0B2238;color:#8FADC8;padding:60px 0 26px;font-size:13px}
+.footer-top{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:40px;padding-bottom:40px;border-bottom:1px solid rgba(255,255,255,.09)}
+.footer h5{color:#fff;font-size:14px;font-weight:700;margin-bottom:16px}
+.footer-brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800;font-size:16px;margin-bottom:14px}
+.footer-brand svg{width:26px;height:26px}
+.footer p.desc{font-size:12.5px;line-height:1.8}
+.footer-links{display:flex;flex-direction:column;gap:10px}
+.footer-links a{color:#8FADC8;transition:.2s}
+.footer-links a:hover{color:#fff}
+.footer-bottom{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding-top:24px;flex-wrap:wrap;
+}
+.footer-bottom p{font-size:12px}
+.footer-extra{display:flex;align-items:center;gap:18px}
+/* —— 隐晦打赏 —— */
+.donate-link{
+  display:inline-flex;align-items:center;gap:8px;color:#8FADC8;
+  font-size:12.5px;padding:8px 16px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);
+  cursor:pointer;transition:.25s;font-family:inherit;
+}
+.donate-link:hover{color:#FFD9A8;border-color:rgba(255,214,150,.4);background:rgba(255,214,150,.08)}
+.donate-link svg{width:15px;height:15px}
+/* —— 打赏弹窗 —— */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;background:rgba(11,34,56,.62);
+  backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:.28s;padding:24px;
+}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{
+  background:#fff;border-radius:22px;max-width:430px;width:100%;padding:34px 32px 30px;
+  transform:translateY(22px) scale(.96);transition:.3s cubic-bezier(.16,1,.3,1);
+  box-shadow:0 30px 80px rgba(0,0,0,.4);position:relative;
+}
+.modal-overlay.open .modal{transform:none}
+.modal-close{
+  position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:10px;border:none;
+  background:var(--bg);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:.2s;font-size:18px;line-height:1;
+}
+.modal-close:hover{background:var(--danger-light);color:var(--danger)}
+.modal-ico{
+  width:54px;height:54px;border-radius:16px;margin:0 auto 16px;
+  background:linear-gradient(135deg,#FFF3E0,#FFE0B2);color:#D98A1F;
+  display:flex;align-items:center;justify-content:center;
+}
+.modal-ico svg{width:28px;height:28px}
+.modal h3{text-align:center;font-size:20px;font-weight:800;color:var(--primary-deep)}
+.modal .sub{text-align:center;font-size:13px;color:var(--muted);margin:10px 0 24px}
+.qr-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.qr-box{
+  border:1px solid var(--line);border-radius:16px;padding:18px 14px 14px;text-align:center;
+  background:#FAFBFD;transition:.25s;
+}
+.qr-box:hover{border-color:var(--primary);box-shadow:var(--shadow)}
+.qr-box h4{font-size:13.5px;font-weight:700;color:var(--primary-deep);display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:13px}
+.qr-box h4 svg{width:16px;height:16px}
+.qr-canvas{
+  width:128px;height:128px;margin:0 auto;border-radius:10px;background:#fff;
+  padding:10px;border:1px solid var(--line);display:block;
+}
+.qr-box small{display:block;margin-top:11px;font-size:11px;color:var(--muted)}
+.qr-note{margin-top:20px;padding-top:18px;border-top:1px dashed var(--line);text-align:center;font-size:12px;color:var(--muted)}
+.qr-note b{color:var(--primary)}
+/* ============ 滚动显现 ============ */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s cubic-bezier(.16,1,.3,1)}
+.reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}
+.reveal.d2{transition-delay:.16s}
+.reveal.d3{transition-delay:.24s}
+/* ============ 响应式 ============ */
+@media (max-width:960px){
+  .hero-grid{grid-template-columns:1fr;gap:56px}
+  .hero{padding:126px 0 80px}
+  .hero h1{font-size:36px}
+  .bento-card,.bento-card.wide{grid-column:span 3}
+  .report-show{grid-template-columns:1fr;gap:36px}
+  .privacy{grid-template-columns:1fr;padding:44px 34px}
+  .footer-top{grid-template-columns:1fr 1fr}
+  .float-chip{right:8px}
+}
+@media (max-width:720px){
+  .nav-links{display:none}
+  .nav-burger{display:block}
+  .nav-links.open{
+    display:flex;position:absolute;top:64px;left:0;right:0;flex-direction:column;
+    background:rgba(11,34,56,.97);padding:18px 24px 26px;gap:18px;align-items:flex-start;
+    border-bottom:1px solid rgba(255,255,255,.1);
+  }
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:20px}
+  .pain-grid{grid-template-columns:1fr}
+  .bento-card,.bento-card.wide{grid-column:span 6}
+  .steps{grid-template-columns:1fr}
+  .plat-grid{grid-template-columns:1fr 1fr}
+  .tests-strip{grid-template-columns:1fr 1fr}
+  .privacy-feats{grid-template-columns:1fr}
+  .footer-top{grid-template-columns:1fr;gap:28px}
+  .section{padding:64px 0}
+  .section-head h2{font-size:27px}
+  .hero h1{font-size:30px}
+  .cta-inner h2{font-size:27px}
+  .qr-row{grid-template-columns:1fr}
+}
+@media (max-width:440px){
+  .plat-grid{grid-template-columns:1fr}
+  .tests-strip{grid-template-columns:1fr}
+  .hero-points{gap:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 导航 ============ -->
+<nav class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="url(#g1)"/>
+        <circle cx="16" cy="16" r="6.5" stroke="#fff" stroke-width="2.4"/>
+        <path d="M16 5v4M16 23v4M5 16h4M23 16h4M8.5 8.5l2.8 2.8M20.7 20.7l2.8 2.8M23.5 8.5l-2.8 2.8M11.3 20.7l-2.8 2.8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+        <defs><linearGradient id="g1" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#2E8BC8"/><stop offset="1" stop-color="#14487A"/></linearGradient></defs>
+      </svg>
+      <span>NetDiag<small>网络自检工具</small></span>
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="#features">功能</a>
+      <a href="#scenes">场景</a>
+      <a href="#flow">怎么用</a>
+      <a href="#report">报告</a>
+      <a href="#platforms">平台</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-primary" href="https://github.com/DingoNan/QM-NetDiag" target="_blank" rel="noopener">GitHub 开源</a>
+    </div>
+    <button class="nav-burger" id="burger" aria-label="菜单">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ============ Hero ============ -->
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow" style="background:rgba(255,255,255,.12);color:#9FD4F8;border-color:rgba(255,255,255,.22)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.2L21 8.6l-5 4.2 1.6 6.7L12 15.8l-5.6 3.7L8 12.8 3 8.6l6.6-.4z"/></svg>
+        开源 · 免费 · 纯本地
+      </span>
+      <h1>网络有没有问题、问题出在哪，<br><em>一键说清楚</em></h1>
+      <p class="lead">NetDiag 是面向一线用户的"傻瓜式"网络体检工具。双击打开、点一下"开始体检"，自动跑完 Ping、TCP、三档带宽、路由追踪、DNS、HTTP 等 7 项测试，一键导出报告发给运维。不装环境、不敲命令、不依赖专业背景。</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="https://github.com/DingoNan/QM-NetDiag" target="_blank" rel="noopener">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+          前往 GitHub 下载
+        </a>
+        <a class="btn btn-ghost" href="#flow">看看怎么用</a>
+      </div>
+      <div class="hero-points">
+        <span class="hero-point"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>7 项检测自动串联</span>
+        <span class="hero-point"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>整体提速 50%+</span>
+        <span class="hero-point"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>数据零上传</span>
+      </div>
+    </div>
+
+    <!-- App 模拟 -->
+    <div class="app-mock">
+      <div class="app-frame">
+        <div class="app-topbar">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="ttl" style="margin-left:6px">网络自检工具 v1.0</span>
+          <span class="sub"><span class="pulse" style="background:#7CD8A6"></span>运行中</span>
+        </div>
+        <div class="app-body">
+          <div class="app-card app-target">
+            <div class="ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
+            </div>
+            <div>
+              <div class="host">目标服务器 59.211.236.211:30014</div>
+              <div class="status"><span class="pulse"></span>服务器在线 · 上次探测正常</div>
+            </div>
+          </div>
+          <button class="app-start-btn" id="mockBtn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            开始体检
+          </button>
+          <p class="app-hint">点击后自动完成全部测试，约 3 分钟 · 全程可视化</p>
+          <div class="app-tests" id="mockTests">
+            <div class="app-test done"><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Ping 连通性<span class="tval">0% 丢包 · 12ms</span></div>
+            <div class="app-test done"><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>TCP 端口 30014<span class="tval">可连接</span></div>
+            <div class="app-test done"><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>iperf3 三档带宽<span class="tval">23.2 / 96.4 Mbps</span></div>
+            <div class="app-test run"><span class="check"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>路由追踪 Tracert<span class="bar"><i style="width:64%"></i></span><span class="tval">12 跳</span></div>
+            <div class="app-test wait"><span class="check"></span>DNS / HTTP / 出口<span class="bar"><i style="width:0%"></i></span></div>
+          </div>
+        </div>
+        <div class="app-nav">
+          <span class="on">快速体检</span><span>高级模式</span><span>长期监测</span><span>历史报告</span>
+        </div>
+      </div>
+      <div class="float-chip">
+        <div class="ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14.01l-3-3"/></svg>
+        </div>
+        <div><b>检测完成</b><small>链路基本正常 · 评分 96</small></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 数据条 ============ -->
+<div class="stats-band">
+  <div class="wrap stats-grid">
+    <div class="reveal"><div class="stat-num" data-count="7">0</div><div class="stat-label">项测试自动串联</div></div>
+    <div class="reveal d1"><div class="stat-num" data-count="6">0</div><div class="stat-label">平台绿色免安装包</div></div>
+    <div class="reveal d2"><div class="stat-num"><span data-count="50">0</span><small>%+</small></div><div class="stat-label">整体检测提速</div></div>
+    <div class="reveal d3"><div class="stat-num" data-count="0">0</div><div class="stat-label">数据上传 · 纯本地运行</div></div>
+  </div>
+</div>
+
+<!-- ============ 痛点 ============ -->
+<section class="section" id="scenes">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.2 2.2m8.4 8.4l2.2 2.2m0-12.8l-2.2 2.2M7.8 16.2l-2.2 2.2"/></svg>痛点场景</span>
+      <h2>"系统连不上、访问好慢"<br>——问题到底出在哪？</h2>
+      <p>一体化系统断连、卡顿、时断时续，是最常见也最难说清的问题。一线用户说不清，运维到场才发现是 DNS、是出口、还是服务端。</p>
+    </div>
+    <div class="pain-grid">
+      <div class="pain-card reveal">
+        <div class="p-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>说不清症状</h3>
+        <p>"打不开系统"背后可能是丢包、断连、DNS 解析失败或服务端宕机。靠人描述，运维只能猜。</p>
+      </div>
+      <div class="pain-card reveal d1">
+        <div class="p-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4m0 16v-4m8-4h-4M8 12H4m14.5-6.5l-3 3m-7 7l-3 3m10 0l-3-3m-7-7l-3-3"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>诊断靠碰运气</h3>
+        <p>手工敲 ping、tracert、iperf3 命令，输出看不懂、参数记不住，试来试去全靠感觉。</p>
+      </div>
+      <div class="pain-card reveal d2">
+        <div class="p-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg></div>
+        <h3>沟通成本高</h3>
+        <p>报修全靠口述 + 截图，信息残缺、来回拉扯。一次简单的链路问题可能来回折腾好几天。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 功能 ============ -->
+<section class="section" id="features" style="padding-top:20px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>核心能力</span>
+      <h2>一个按钮，跑完专业体检</h2>
+      <p>从连通性到带宽、从 DNS 到证书，把原来要靠命令行才能完成的排障流程，压缩成一次点击。</p>
+    </div>
+    <div class="bento">
+      <div class="bento-card reveal">
+        <div class="b-card-ico" style="background:var(--accent-light);color:var(--primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <h3>并行加速</h3>
+        <p>iperf3 三档带宽与路由追踪并行执行，整体检测耗时压缩 50%+，快而不漏。</p>
+        <span class="tagline">3 分钟完成全套<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </div>
+      <div class="bento-card reveal d1">
+        <div class="b-card-ico" style="background:var(--success-light);color:var(--success)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+        </div>
+        <h3>历史基线对比</h3>
+        <p>报告自动与同类型上次检测对比，带宽、延迟、丢包变化百分比一目了然。</p>
+        <span class="tagline">变化百分比自动算<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </div>
+      <div class="bento-card reveal d2">
+        <div class="b-card-ico" style="background:var(--warning-light);color:#B9771C">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        </div>
+        <h3>长期监测</h3>
+        <p>周期性 Ping + TCP + HTTP 探测，自动捕获"时断时续"不稳定事件，输出事件时间线与趋势图，专治间歇性故障。</p>
+        <span class="tagline">几点几分发生什么，一眼定位<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </div>
+      <div class="bento-card reveal d3">
+        <div class="b-card-ico" style="background:#EFE9FD;color:#7C5CD6">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <h3>分层诊断</h3>
+        <p>报告自动定位问题层级：DNS 配置 / 本地网络 / 目标服务端 / 带宽限制，不再眉毛胡子一把抓。</p>
+        <span class="tagline">自动判断问题在哪一层<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </div>
+      <div class="bento-card reveal">
+        <div class="b-card-ico" style="background:#E5F5EC;color:#2E9E5B">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6a6 6 0 1 0 6 6"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
+        <h3>带宽自动评估</h3>
+        <p>无需预设参考值，实测自动给出带宽估算与通俗等级：百兆级、较快、普通办公、偏慢、极慢。</p>
+        <span class="tagline">不懂带宽也能看明白<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </div>
+      <div class="bento-card reveal d1">
+        <div class="b-card-ico" style="background:#FDF3E3;color:#B9771C">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 1 6 6c0 3-2 4-2 6h-8c0-2-2-3-2-6a6 6 0 0 1 6-6z"/></svg>
+        </div>
+        <h3>修复提示</h3>
+        <p>每项异常附"下一步怎么做"的行动建议，不懂网络也能照着操作，报告即行动指南。</p>
+        <span class="tagline">每项异常都有建议<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </div>
+
+      <div class="bento-card full reveal" style="grid-column:span 6">
+        <div class="b-card-ico" style="background:var(--accent-light);color:var(--primary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/><path d="M6 20l8-8 4 4"/></svg>
+        </div>
+        <h3>7 项测试一次跑完</h3>
+        <p>快速体检一键串联全部测试项，绿 / 黄 / 红三色即时反馈状态，逐项进度全程可见。</p>
+        <div class="tests-strip">
+          <div class="test-pill"><span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Ping 连通性</div>
+          <div class="test-pill"><span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>TCP 端口探测</div>
+          <div class="test-pill"><span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>iperf3 单流带宽</div>
+          <div class="test-pill"><span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>iperf3 并行 8 流</div>
+          <div class="test-pill"><span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>iperf3 反向（下行）</div>
+          <div class="test-pill"><span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>路由追踪 Tracert</div>
+          <div class="test-pill"><span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>DNS 解析</div>
+          <div class="test-pill"><span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>HTTP 探测 + TLS 证书</div>
+          <div class="test-pill warn"><span class="c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01"/><circle cx="12" cy="12" r="9"/></svg></span>出口连通性检测</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 流程 ============ -->
+<section class="section" id="flow" style="background:#EDF2F7">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>三步完成</span>
+      <h2>不需要任何学习成本</h2>
+      <p>面向 40+ 岁一线办公人群的设计：大字号、大按钮、结果一眼看懂。</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <h3>双击打开</h3>
+        <p>绿色免安装包，拷贝即用。Windows、银河麒麟、macOS 六大平台各取所需，U 盘分发自带智能启动器。</p>
+        <span class="kbd">双击 NetDiag.exe</span>
+      </div>
+      <div class="step reveal d1">
+        <h3>点一下"开始体检"</h3>
+        <p>7 项测试自动跑完，绿黄红三色全程可视化，约 3 分钟出结果。异常项自动附带修复建议。</p>
+        <span class="kbd">点击 ▶ 开始体检</span>
+      </div>
+      <div class="step reveal d2">
+        <h3>导出报告发运维</h3>
+        <p>HTML 报告（可打印 PDF）+ TXT 日志 + 微信一行摘要，一键复制粘贴直发，运维秒懂。</p>
+        <span class="kbd">复制摘要 → 粘贴发送</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 报告示例 ============ -->
+<section class="section" id="report">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>报告即证据</span>
+      <h2>一份报告，说清所有问题</h2>
+      <p>结构化、可定位问题、可直接报修的排障报告，同时给运维专业的细节、给用户直白的话。</p>
+    </div>
+    <div class="report-show">
+      <div class="report-doc reveal">
+        <div class="report-head">
+          <h4>网络自检报告</h4>
+          <p>国产化信创 · 一体化系统网络体检 ｜ NetDiag v1.0 ｜ 生成时间 2026-08-20 15:30</p>
+        </div>
+        <div class="report-banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14.01l-3-3"/></svg>
+          <div><b>链路基本正常</b> <span>· 评分 96 分</span></div>
+        </div>
+        <div class="report-stats">
+          <div class="r-stat ok"><div class="k">平均延迟</div><div class="v">12<small> ms</small></div></div>
+          <div class="r-stat ok"><div class="k">丢包率</div><div class="v">0<small> %</small></div></div>
+          <div class="r-stat warn"><div class="k">下行带宽</div><div class="v">18.5<small> Mbps</small></div></div>
+          <div class="r-stat ok"><div class="k">上行带宽</div><div class="v">23.2<small> Mbps</small></div></div>
+          <div class="r-stat warn"><div class="k">重传率</div><div class="v">3.1<small> %</small></div></div>
+          <div class="r-stat ok"><div class="k">稳定性评级</div><div class="v">B<small> 级</small></div></div>
+        </div>
+        <div class="report-table">
+          <div class="row"><b>Ping 连通性测试</b><span class="st badge badge-ok">正常 · 0% 丢包</span></div>
+          <div class="row"><b>TCP 端口探测</b><span class="st badge badge-ok">可连接</span></div>
+          <div class="row"><b>iperf3 带宽测试 · 单流上行</b><span class="st badge badge-ok">23.2 Mbps</span></div>
+          <div class="row"><b>iperf3 带宽测试 · 8 流并行</b><span class="st badge badge-ok">96.4 Mbps</span></div>
+          <div class="row"><b>iperf3 带宽测试 · 反向（下行）</b><span class="st badge badge-warn">重传率偏高</span></div>
+          <div class="row"><b>路由追踪 Tracert</b><span class="st badge badge-ok">12 跳 · 路径正常</span></div>
+        </div>
+        <div class="report-foot">说明：带宽测试走运营商 NAT 映射链路，结果受运营商线路质量影响。报告由本机工具本地生成，未上传任何数据。</div>
+      </div>
+      <div class="wechat-card reveal d1">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          微信一行摘要
+        </h4>
+        <p>报告摘要为纯文本，微信直接可读，一键复制直发运维群。</p>
+        <div class="msg" id="wechatMsg">📊 网络自检报告 08-20 15:30 ｜ 目标 59.211.236.211:30014 ｜ <span class="hl">丢包0%</span> <span class="hl">延迟12ms</span> <span class="hlw">下行18.5M</span> <span class="hl">上行23.2M</span> <span class="hlw">重传3.1%</span> ｜ 结论：<span class="hl">链路正常</span></div>
+        <button class="btn btn-dark copy-btn" id="copyBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          复制摘要
+        </button>
+        <div class="mini-chart" style="margin-top:22px">
+          <i style="height:28%"></i><i style="height:34%"></i><i style="height:30%"></i><i style="height:52%"></i><i class="red" style="height:18%"></i><i style="height:40%"></i><i style="height:56%"></i><i style="height:62%"></i><i style="height:48%"></i><i class="blue" style="height:70%"></i><i style="height:78%"></i><i style="height:66%"></i><i style="height:84%"></i><i style="height:72%"></i><i style="height:90%"></i>
+        </div>
+        <div class="mini-legend">
+          <span><i style="background:#2E9E5B"></i>Ping 延迟</span>
+          <span><i style="background:#2196F3"></i>TCP 建连</span>
+          <span><i style="background:#D64545"></i>断连事件</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 平台 ============ -->
+<section class="section" id="platforms" style="background:#EDF2F7">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>多平台覆盖</span>
+      <h2>国产化信创，同样开箱即用</h2>
+      <p>六个绿色免安装包，覆盖国产化办公全场景，U 盘即插即用。</p>
+    </div>
+    <div class="plat-grid">
+      <div class="plat-card reveal">
+        <div class="plat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <div><h4>Windows 32 / 64 位</h4><p>Win7 / 10 / 11 · 已内置 iperf3</p></div>
+      </div>
+      <div class="plat-card reveal d1">
+        <div class="plat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg></div>
+        <div><h4>银河麒麟 x64 / ARM</h4><p>麒麟 V10 · 统信 UOS · 鲲鹏 / 飞腾</p></div>
+      </div>
+      <div class="plat-card reveal d2">
+        <div class="plat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c2 3 6 4.5 6 9a6 6 0 0 1-12 0c0-4.5 4-6 6-9z"/><path d="M12 22v-5"/></svg></div>
+        <div><h4>macOS Intel / Apple</h4><p>macOS 10.15+ · Intel / M 系列芯片</p></div>
+      </div>
+      <div class="plat-card reveal">
+        <div class="plat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.2 2.2M16.2 16.2l2.2 2.2M18.4 5.6l-2.2 2.2M7.8 16.2l-2.2 2.2"/></svg></div>
+        <div><h4>系统自检</h4><p>启动自动识别系统 / 架构，版本选错立即提示</p></div>
+      </div>
+      <div class="plat-card reveal d1">
+        <div class="plat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg></div>
+        <div><h4>智能启动器</h4><p>U 盘根目录自动选择对应版本，用户无感</p></div>
+      </div>
+      <div class="plat-card reveal d2">
+        <div class="plat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+        <div><h4>免安装绿色包</h4><p>拷贝即用，不写注册表，卸载即删除</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 隐私 ============ -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="privacy reveal">
+      <div>
+        <h3>纯本地运行，数据零上传</h3>
+        <p>所有测试在本机完成，报告在本机生成，工具不收集、不上传、不存储任何业务数据。内置 iperf3 二进制，连依赖都不需要联网下载。</p>
+      </div>
+      <div class="privacy-feats">
+        <div class="pf">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div><b>无网络请求</b><small>测试全部本机执行</small></div>
+        </div>
+        <div class="pf">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div><b>报告本地保存</b><small>结果/ 目录一键归档</small></div>
+        </div>
+        <div class="pf">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg></div>
+          <div><b>杀毒友好</b><small>onedir 打包，误报率更低</small></div>
+        </div>
+        <div class="pf">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div><b>完全免费</b><small>开源协议，随取随用</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section" id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>常见问题</span>
+      <h2>你可能想问</h2>
+    </div>
+    <div class="faq reveal">
+      <div class="faq-item">
+        <div class="faq-q">需要安装 Python 或任何依赖吗？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div class="faq-a"><p>不需要。分发的是绿色免安装包，已内置 iperf3 二进制，拷贝到目标机器双击即可运行。源码运行也只需系统自带 Python 3.8+（麒麟需安装 python3-tkinter）。</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">工具会上传我的数据吗？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div class="faq-a"><p>不会。所有测试在本机执行、报告在本机生成，工具本身没有任何上传行为，测试目标地址也可在配置中完全自定义。适合政务网等敏感内网环境。</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">杀毒软件提示拦截怎么办？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div class="faq-a"><p>PyInstaller 打包的程序可能被 360 / 火绒等提示，这是常见误报。项目采用 onedir 模式打包以降低误报率，添加信任 / 白名单即可正常使用。</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">麒麟系统上怎么运行？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div class="faq-a"><p>使用麒麟 x64 或麒麟 ARM 绿色包（鲲鹏 / 飞腾对应 ARM 版）。如提示缺少 tkinter，执行 yum install -y python3-tkinter 即可。启动时工具会自动识别系统与架构。</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">iperf3 测试报失败怎么办？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div class="faq-a"><p>确认目标服务器已运行 iperf3 -s，且 NAT 映射端口正确。iperf3 服务器地址可在设置中单独配置，测试目标也可完全自定义。</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">长期监测什么时候会用到？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div class="faq-a"><p>专治"时断时续"类间歇性故障：快速检测没问题但系统就是时不时卡一下时，开启 10 分钟长期监测，工具会自动记录丢包、断连、延迟突增事件，生成趋势图与事件时间线，把"说不清"变成"几点几分发生了什么"。</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="cta-band">
+  <div class="wrap cta-inner">
+    <h2 class="reveal">下次网络卡顿，别猜了</h2>
+    <p class="reveal d1">下载 NetDiag，3 分钟给运维一份专业报告。</p>
+    <div class="cta-btns reveal d2">
+      <a class="btn btn-primary" href="https://github.com/DingoNan/QM-NetDiag" target="_blank" rel="noopener">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        前往 GitHub 下载
+      </a>
+      <a class="btn btn-ghost" href="https://github.com/DingoNan/QM-NetDiag" target="_blank" rel="noopener">查看源码与设计文档</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 页脚 ============ -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">
+          <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="url(#g2)"/>
+            <circle cx="16" cy="16" r="6.5" stroke="#fff" stroke-width="2.4"/>
+            <path d="M16 5v4M16 23v4M5 16h4M23 16h4M8.5 8.5l2.8 2.8M20.7 20.7l2.8 2.8M23.5 8.5l-2.8 2.8M11.3 20.7l-2.8 2.8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+            <defs><linearGradient id="g2" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#2E8BC8"/><stop offset="1" stop-color="#14487A"/></linearGradient></defs>
+          </svg>
+          NetDiag 网络自检工具
+        </div>
+        <p class="desc">面向一线用户的傻瓜式网络体检工具。<br>国产化信创 · 一体化系统网络排障 · 纯本地运行<br>设计：浅木·先生</p>
+      </div>
+      <div>
+        <h5>快速导航</h5>
+        <div class="footer-links">
+          <a href="#features">核心功能</a>
+          <a href="#scenes">痛点场景</a>
+          <a href="#flow">使用流程</a>
+          <a href="#report">报告示例</a>
+        </div>
+      </div>
+      <div>
+        <h5>资源</h5>
+        <div class="footer-links">
+          <a href="https://github.com/DingoNan/QM-NetDiag" target="_blank" rel="noopener">GitHub 仓库</a>
+          <a href="https://github.com/DingoNan/QM-NetDiag/blob/main/README.md" target="_blank" rel="noopener">README 文档</a>
+          <a href="https://github.com/DingoNan/QM-NetDiag/blob/main/%E8%AE%BE%E8%AE%A1%E6%96%87%E6%A1%A3.md" target="_blank" rel="noopener">设计文档</a>
+          <a href="https://github.com/DingoNan/QM-NetDiag/tree/main/docs/prototype" target="_blank" rel="noopener">界面原型</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 NetDiag · 开源网络自检工具 · 本页面纯静态，无任何追踪脚本</p>
+      <div class="footer-extra">
+        <button class="donate-link" id="donateBtn" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 11h1a3 3 0 0 1 0 6h-1M9 12v6M13 12v6M14 7.5c1 1 2.5 1 3.5 0s1.5-2.5 0-3.5c-1.5-1-3-1-4.5 0-1.5-1-3-1-4.5 0-1.5 1-1 2.5 0 3.5s2.5 1 3.5 0z"/><path d="M3 21h18"/></svg>
+          如果这个工具帮到了你，可以请作者喝杯咖啡
+        </button>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ 打赏弹窗 ============ -->
+<div class="modal-overlay" id="donateModal" role="dialog" aria-modal="true" aria-labelledby="donateTitle">
+  <div class="modal">
+    <button class="modal-close" id="donateClose" aria-label="关闭">×</button>
+    <div class="modal-ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 11h1a3 3 0 0 1 0 6h-1M9 12v6M13 12v6M14 7.5c1 1 2.5 1 3.5 0s1.5-2.5 0-3.5c-1.5-1-3-1-4.5 0-1.5-1-3-1-4.5 0-1.5 1-1 2.5 0 3.5s2.5 1 3.5 0z"/><path d="M3 21h18"/></svg>
+    </div>
+    <h3 id="donateTitle">一杯咖啡的鼓励</h3>
+    <p class="sub">NetDiag 完全开源免费。如果它帮你省下过时间，欢迎用一杯咖啡支持持续维护，不强制、不打扰。</p>
+    <div class="qr-row">
+      <div class="qr-box">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          微信赞赏
+        </h4>
+        <svg class="qr-canvas" viewBox="0 0 29 29" aria-label="微信赞赏码占位">
+          <rect width="29" height="29" fill="#fff"/>
+          <g fill="#0B2238">
+            <path d="M1 1h7v7H1zM21 1h7v7h-7zM1 21h7v7H1zM3 3h3v3H3zM23 3h3v3h-3zM3 23h3v3H3z"/>
+            <path d="M10 1h2v2h-2zM14 1h2v2h-2zM18 1h2v2h-2zM10 5h4v2h-4zM18 5h2v2h-2zM1 10h2v2H1zM5 10h4v2H5zM12 10h2v2h-2zM16 10h2v2h-2zM21 10h7v2h-7zM1 14h2v2H1zM5 14h2v2H5zM8 14h4v2H8zM14 14h4v2h-4zM20 14h8v2h-8zM10 18h2v2h-2zM14 18h2v2h-2zM18 18h4v2h-4zM24 18h4v2h-4zM1 22h2v2H1zM5 22h6v2H5zM14 22h2v2h-2zM18 22h2v2h-2zM22 22h6v2h-6zM10 26h2v2h-2zM14 26h2v2h-2zM18 26h4v2h-4zM24 26h4v2h-4z"/>
+          </g>
+        </svg>
+        <small>请替换为你的微信赞赏码</small>
+      </div>
+      <div class="qr-box">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          支付宝转账
+        </h4>
+        <svg class="qr-canvas" viewBox="0 0 29 29" aria-label="支付宝收款码占位">
+          <rect width="29" height="29" fill="#fff"/>
+          <g fill="#0B2238">
+            <path d="M1 1h7v7H1zM21 1h7v7h-7zM1 21h7v7H1zM3 3h3v3H3zM23 3h3v3h-3zM3 23h3v3H3z"/>
+            <path d="M10 1h2v2h-2zM14 1h2v2h-2zM18 1h2v2h-2zM10 5h4v2h-4zM18 5h2v2h-2zM1 10h2v2H1zM5 10h4v2H5zM12 10h2v2h-2zM16 10h2v2h-2zM21 10h7v2h-7zM1 14h2v2H1zM5 14h2v2H5zM8 14h4v2H8zM14 14h4v2h-4zM20 14h8v2h-8zM10 18h2v2h-2zM14 18h2v2h-2zM18 18h4v2h-4zM24 18h4v2h-4zM1 22h2v2H1zM5 22h6v2H5zM14 22h2v2h-2zM18 22h2v2h-2zM22 22h6v2h-6zM10 26h2v2h-2zM14 26h2v2h-2zM18 26h4v2h-4zM24 26h4v2h-4z"/>
+          </g>
+        </svg>
+        <small>请替换为你的支付宝收款码</small>
+      </div>
+    </div>
+    <div class="qr-note">感谢每一位支持者，<b>是你们让开源持续</b>。</div>
+  </div>
+</div>
+
+<script>
+/* ============ 滚动显现 ============ */
+(function(){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, {threshold:.12, rootMargin:'0px 0px -40px'});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+})();
+
+/* ============ 数字滚动 ============ */
+(function(){
+  function animate(el){
+    var target = parseInt(el.getAttribute('data-count'),10);
+    if(isNaN(target)) return;
+    var dur = 1200, start = null;
+    function step(ts){
+      if(!start) start = ts;
+      var p = Math.min((ts-start)/dur, 1);
+      var eased = 1 - Math.pow(1-p, 3);
+      el.textContent = Math.round(target * eased);
+      if(p < 1) requestAnimationFrame(step); else el.textContent = target;
+    }
+    requestAnimationFrame(step);
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ animate(e.target); io.unobserve(e.target); }
+    });
+  }, {threshold:.6});
+  document.querySelectorAll('.stat-num [data-count]').forEach(function(el){ io.observe(el); });
+})();
+
+/* ============ App 模拟动画 ============ */
+(function(){
+  var btn = document.getElementById('mockBtn');
+  var tests = document.querySelectorAll('#mockTests .app-test');
+  var chip = document.querySelector('.float-chip');
+  var running = false;
+  var timers = [];          // 延迟任务句柄
+  var iv4 = null, iv5 = null; // 进度条定时器
+  var done4 = false, done5 = false; // 两项是否都完成
+
+  function clearAll(){
+    [iv4, iv5].forEach(function(t){ if(t) clearInterval(t); });
+    timers.forEach(clearTimeout);
+    timers = [];
+    iv4 = iv5 = null;
+    done4 = done5 = false;
+    running = false;
+  }
+
+  function setCheck(el, html){
+    var c = el.querySelector('.check');
+    if(c) c.innerHTML = html || '';
+  }
+
+  function finishMock(){
+    if(!done4 || !done5) return;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>体检完成 · 评分 96';
+    btn.classList.add('checked');
+    chip.style.transition = 'opacity .5s ease .15s';
+    chip.style.opacity = '1';
+    running = false;
+  }
+
+  function resetMock(){
+    clearAll();
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>开始体检';
+    btn.classList.remove('checked');
+    chip.style.opacity = '0';
+    tests.forEach(function(t,i){
+      t.className = 'app-test';
+      var bar = t.querySelector('.bar i');
+      if(bar) bar.style.width = '0%';
+      if(i >= 3) t.classList.add('wait');
+      setCheck(t, '');
+    });
+    // 前三项恢复为已完成
+    for(var i = 0; i < 3; i++){
+      tests[i].className = 'app-test done';
+      setCheck(tests[i], '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>');
+    }
+  }
+
+  btn.addEventListener('click', function(){
+    if(running){ resetMock(); return; }
+    running = true;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>正在体检…（点击停止）';
+
+    var t4 = tests[3], t5 = tests[4];
+    var bar4 = t4.querySelector('.bar i');
+    var bar5 = t5.querySelector('.bar i');
+
+    // 第 4 项（路由追踪）立即开跑
+    t4.className = 'app-test run';
+    var p4 = 0;
+    iv4 = setInterval(function(){
+      p4 += 3 + Math.random()*6;
+      if(p4 >= 100){ p4 = 100; clearInterval(iv4); iv4 = null; }
+      bar4.style.width = p4 + '%';
+    }, 160);
+
+    // 第 5 项（DNS/HTTP/出口）延迟开跑
+    timers.push(setTimeout(function(){
+      t5.className = 'app-test run';
+      var p5 = 0;
+      iv5 = setInterval(function(){
+        p5 += 2 + Math.random()*5;
+        if(p5 >= 100){ p5 = 100; clearInterval(iv5); iv5 = null; }
+        bar5.style.width = p5 + '%';
+      }, 180);
+    }, 1300));
+
+    // 第 4 项完成
+    timers.push(setTimeout(function(){
+      t4.className = 'app-test done';
+      setCheck(t4, '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>');
+      var v = t4.querySelector('.tval');
+      if(v) v.textContent = '12 跳 · 正常';
+      done4 = true; finishMock();
+    }, 3800));
+
+    // 第 5 项完成
+    timers.push(setTimeout(function(){
+      t5.className = 'app-test done';
+      setCheck(t5, '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>');
+      var v = t5.querySelector('.tval');
+      if(v) v.textContent = 'DNS/HTTP 正常';
+      done5 = true; finishMock();
+    }, 4600));
+  });
+
+  resetMock();
+})();
+
+/* ============ 复制摘要 ============ */
+(function(){
+  var btn = document.getElementById('copyBtn');
+  var msg = document.getElementById('wechatMsg');
+  btn.addEventListener('click', function(){
+    var text = msg.innerText;
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); }catch(e){}
+      document.body.removeChild(ta);
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(flash).catch(fallback);
+    } else fallback();
+    function flash(){
+      var old = btn.innerHTML;
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>已复制';
+      setTimeout(function(){ btn.innerHTML = old; }, 1800);
+    }
+  });
+})();
+
+/* ============ FAQ ============ */
+(function(){
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var q = item.querySelector('.faq-q');
+    var a = item.querySelector('.faq-a');
+    q.addEventListener('click', function(){
+      var open = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function(o){
+        o.classList.remove('open');
+        o.querySelector('.faq-a').style.maxHeight = '0px';
+      });
+      if(!open){
+        item.classList.add('open');
+        a.style.maxHeight = a.scrollHeight + 'px';
+      }
+    });
+  });
+})();
+
+/* ============ 打赏弹窗 ============ */
+(function(){
+  var modal = document.getElementById('donateModal');
+  var openBtn = document.getElementById('donateBtn');
+  var closeBtn = document.getElementById('donateClose');
+  function open(){ modal.classList.add('open'); document.body.style.overflow='hidden'; }
+  function close(){ modal.classList.remove('open'); document.body.style.overflow=''; }
+  openBtn.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+  modal.addEventListener('click', function(e){ if(e.target === modal) close(); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
+})();
+
+/* ============ 移动端菜单 ============ */
+(function(){
+  var burger = document.getElementById('burger');
+  var links = document.getElementById('navLinks');
+  burger.addEventListener('click', function(){ links.classList.toggle('open'); });
+  links.addEventListener('click', function(e){
+    if(e.target.tagName === 'A') links.classList.remove('open');
+  });
+})();
+
+/* ============ 导航滚动状态 ============ */
+(function(){
+  var nav = document.getElementById('nav');
+  window.addEventListener('scroll', function(){
+    if(window.scrollY > 10){ nav.style.boxShadow = '0 4px 20px rgba(0,0,0,.25)'; }
+    else{ nav.style.boxShadow = 'none'; }
+  });
+})();
+</script>
+</body>
+</html>
