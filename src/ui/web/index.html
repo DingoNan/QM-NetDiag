@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>NetDiag v2 · 网络体检</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <!-- 顶部状态栏 -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12l9-9 9 9-9 9z" stroke="url(#g1)"/>
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="24" y2="24">
+            <stop offset="0%" stop-color="#00E5FF"/>
+            <stop offset="50%" stop-color="#8B5CF6"/>
+            <stop offset="100%" stop-color="#FF3D9A"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <span>NetDiag</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="topbar-btn" id="btn-history" title="历史">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      </button>
+      <button class="topbar-btn" id="btn-theme" title="主题">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+      <button class="topbar-btn" id="btn-settings" title="设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 主内容区 -->
+  <div class="app-body" id="app-body">
+
+    <!-- 启动页 -->
+    <div class="welcome" id="view-welcome">
+      <div class="welcome-logo">⚡</div>
+      <div class="welcome-title">NetDiag v2</div>
+      <div class="welcome-subtitle">让网络测试变得简单</div>
+
+      <button class="btn-primary-glow" id="btn-start-test">▶ 开始测试</button>
+
+      <div class="scenario-picker">
+        <button class="scenario-chip active" data-scenario="general">通用</button>
+        <button class="scenario-chip" data-scenario="game">🎮 游戏</button>
+        <button class="scenario-chip" data-scenario="video">🎬 视频</button>
+        <button class="scenario-chip" data-scenario="office">💬 办公</button>
+        <button class="scenario-chip" data-scenario="dev">👨‍💻 开发</button>
+        <button class="scenario-chip" data-scenario="overseas">🌍 海外</button>
+      </div>
+
+      <div class="welcome-recent">
+        <span>选择常用场景，让快捷目标栏更贴近你的使用习惯</span>
+      </div>
+    </div>
+
+    <!-- 仪表盘 -->
+    <div class="dashboard" id="view-dashboard" style="display:none;">
+      <div class="dashboard-header">
+        <div>
+          <div class="dashboard-title">我的网络体检</div>
+          <div class="dashboard-subtitle" id="dashboard-subtitle">最近 1 次测试 · <span id="dashboard-time">—</span></div>
+        </div>
+        <button class="btn-secondary" id="btn-refresh">🔄 重新测试</button>
+      </div>
+
+      <!-- 综合评分卡 -->
+      <div class="score-card" id="score-card">
+        <div class="score-ring">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#252F4A" stroke-width="10"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="url(#g2)" stroke-width="10"
+                    stroke-dasharray="314" stroke-dashoffset="100" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="g2" x1="0" y1="0" x2="120" y2="120">
+                <stop offset="0%" stop-color="#00E5FF"/>
+                <stop offset="50%" stop-color="#8B5CF6"/>
+                <stop offset="100%" stop-color="#FF3D9A"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="score-value">
+            <div class="score-value-number" id="overall-score">—</div>
+            <div class="score-value-grade" id="overall-grade">—</div>
+          </div>
+        </div>
+        <div class="score-info">
+          <h2 id="overall-title">尚未测试</h2>
+          <p id="overall-comment">点击「重新测试」开始一次网络体检</p>
+          <div class="score-meta">
+            <div class="score-meta-item">共 <strong id="meta-count">0</strong> 个目标</div>
+            <div class="score-meta-item">耗时 <strong id="meta-duration">—</strong></div>
+            <div class="score-meta-item">场景 <strong id="meta-scenario">通用</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分类标签 -->
+      <div class="category-tabs" id="category-tabs">
+        <button class="category-tab active" data-cat="all">全部</button>
+        <button class="category-tab" data-cat="game">🎮 游戏</button>
+        <button class="category-tab" data-cat="video">🎬 视频</button>
+        <button class="category-tab" data-cat="chat">💬 通讯</button>
+        <button class="category-tab" data-cat="dev">👨‍💻 开发</button>
+        <button class="category-tab" data-cat="overseas">🌍 海外</button>
+      </div>
+
+      <!-- 目标卡片网格 -->
+      <div class="target-grid" id="target-grid">
+        <!-- 由 JS 填充 -->
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="action-bar">
+        <button class="btn-primary" id="btn-quick-test">🚀 一键全测</button>
+        <button class="btn-secondary" id="btn-custom-target">🎯 自定义目标</button>
+      </div>
+    </div>
+
+    <!-- 测试进行中 -->
+    <div class="testing" id="view-testing" style="display:none;">
+      <h2 style="font-size: 24px; margin-bottom: 16px;">⚡ 正在测试…</h2>
+      <div class="testing-progress" id="testing-progress"></div>
+      <div class="testing-waveform">
+        <svg id="waveform-svg" viewBox="0 0 400 80" preserveAspectRatio="none">
+          <path id="waveform-path" d="" stroke="#00E5FF" stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+      <p style="color: var(--text-secondary); margin: 16px 0;">实时延迟波形</p>
+      <div class="testing-list" id="testing-list"></div>
+      <button class="btn-secondary" id="btn-stop-test" style="margin-top: 24px;">⏹ 停止</button>
+    </div>
+
+    <!-- 结果页 -->
+    <div class="result-page" id="view-result" style="display:none;">
+      <div class="poster-card">
+        <div class="poster-score">
+          <div class="poster-score-number" id="result-score">—</div>
+          <div class="poster-score-grade" id="result-grade">—</div>
+          <p style="margin-top: 16px; color: var(--text-secondary); font-size: 15px;" id="result-comment">—</p>
+        </div>
+        <div class="poster-detail">
+          <h3 style="margin-bottom: 12px; font-size: 18px;">测试明细</h3>
+          <div id="result-rows"></div>
+        </div>
+        <div class="poster-actions">
+          <button class="btn-primary" id="btn-share">📤 分享</button>
+          <button class="btn-secondary" id="btn-save-img">💾 保存图片</button>
+          <button class="btn-secondary" id="btn-copy">📋 复制摘要</button>
+          <button class="btn-secondary" id="btn-retry">🔁 再测一次</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
